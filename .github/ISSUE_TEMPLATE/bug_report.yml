@@ -12,8 +12,8 @@ body:
     id: version
     attributes:
       label: 版本号 / Version
-      description: 设置页底部显示，例如 v56.4.4 / Shown at the bottom of the Settings screen, e.g. v56.4.4
-      placeholder: "v56.4.4"
+      description: 在设置 → 关于中查看，例如 0.3.13 / Settings → About, e.g. 0.3.13
+      placeholder: "0.3.13"
     validations:
       required: true
   - type: input

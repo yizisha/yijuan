@@ -1,10 +1,6 @@
-# 更新日志
+# FlowReader 上游历史
 
-> 本文件为历史阶段副本；当前版本参见根目录 [更新日志](../CHANGELOG.md)。
-
-本项目遵循语义化版本控制规范。
-
----
+以下为基础项目 FlowReader 保留的版本与贡献记录，不属于一卷的发布历史。原项目：[HuZaiGong/flowreader](https://github.com/HuZaiGong/flowreader)。
 
 ## [v56.5.2] - 2026-08-14
 > 性能优化：domain 模型稳定性配置使书架卡片、阅读器参数可跳过重组。

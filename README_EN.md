@@ -1,95 +1,77 @@
 # Yijuan · 一卷
 
 <p align="center">
-  <img src="app/src/main/res/drawable-nodpi/yejian_icon_art.png" width="96" alt="Yijuan app icon">
+  <img src="app/src/main/res/drawable-nodpi/yejian_icon_art.png" width="96" alt="Yijuan">
 </p>
 
+<p align="center"><b>Organize your library. Enjoy your reading.</b></p>
 <p align="center">
-  <b>Your local library, your reading preferences.</b><br>
-  Android e-book reader · Kotlin / Jetpack Compose · GPL-3.0
+  <a href="https://github.com/yizisha/yijuan/releases/latest">Download</a> ·
+  <a href="https://github.com/yizisha/yijuan/issues">Report an issue</a> ·
+  <a href="README.md">简体中文</a>
 </p>
 
-<p align="center">
-  <a href="README.md">简体中文</a> · <b>English</b> ·
-  <a href="https://github.com/yizisha/yijuan/releases">Downloads</a> ·
-  <a href="https://github.com/yizisha/yijuan/issues">Issues</a>
-</p>
-
-Yijuan focuses on local books, continuous reading and personal notes. Its main navigation is **Library / Statistics / Notes / Settings**. Import your own books; no account registration is required.
-
-This project builds on FlowReader's open-source code and is maintained independently in this repository, with its own name, versions and releases. Attribution is provided below.
+Yijuan is a local e-book reader for Android. Import your books, organize groups and series, adjust typography to your preferences, and keep excerpts and notes. No account registration is required.
 
 ## Download
 
-Current release: **0.3.13** (versionCode **5710**).
+Get the APK from [Releases](https://github.com/yizisha/yijuan/releases/latest). The current version is **0.3.13**, requires **Android 8.0 or later**, and provides an **ARM64** package of approximately **29.36 MiB**.
 
-| File | Purpose |
-| --- | --- |
-| [Android APK](https://github.com/yizisha/yijuan/releases/download/v0.3.13/yijuan-0.3.13-arm64.apk) | ARM64, approximately 29.36 MiB; Android 8.0 or later |
-| [Release source](https://github.com/yizisha/yijuan/releases/download/v0.3.13/yijuan-0.3.13-source.zip) | Source for the 0.3.13 release commit, including the local speech runtime dependency |
-| [SHA-256 checksums](https://github.com/yizisha/yijuan/releases/download/v0.3.13/SHA256SUMS.txt) | Verify the APK and source archive |
+Each release includes a source archive and SHA-256 checksums. Books and offline speech models are not bundled with the app.
 
-See [Releases](https://github.com/yizisha/yijuan/releases) for release notes. Books and speech models are not bundled with the app.
+## Supported formats
+
+- **EPUB and TXT:** text reading with adjustable fonts and typography.
+- **PDF:** original page layout, zoom, page navigation and saved reading position.
 
 ## Features
 
-| Area | Current implementation |
-| --- | --- |
-| Library | Grid and list layouts, groups, unread / reading / finished filters, sorting and reading history; favorites work independently of groups |
-| Book series | Combined series entries, manual volume order and a next-volume prompt at the end |
-| Reading | Primarily EPUB, TXT and PDF; horizontal pagination, vertical scrolling, contents navigation, saved progress and bookmarks |
-| Appearance | Imported fonts, text size, line and paragraph spacing, margins, gestures and page-turn settings; two visual styles and dark mode |
-| Notes and search | Long-press selection, copying, underlines or soft highlights, notes and return-to-text; in-book and library-wide text search |
-| Statistics | Weekly, monthly and yearly views, trends, reading metrics, heatmaps, goals and reminders |
-| Files and data | Local import, folder scans, ZIP batch import and LAN transfer; file size and source location in book details; backup, restore, export and app lock |
-| Optional read-aloud | Disabled by default; enable in Settings → App. Supports system speech and offline models downloaded or imported separately |
+### Library
 
-## Usage
+- Grid and list layouts, search, sorting and reading history.
+- Custom groups and unread, reading and finished filters; favorites remain independent of groups.
+- Combined series entries, manual volume order and a next-volume prompt.
+- Local import, folder scans, ZIP batch import and LAN transfer.
+- File size and source information in book details, with location copying, source association and saving a copy.
 
-- **Groups and favorites:** tap the library's group selector to switch groups. Reading-status filters follow the selected group; Favorites always uses the full library.
-- **Series:** assign books through their menus, then manage members and volume order in the series view.
-- **Reading and notes:** tap to show the reader toolbar. Settings provides font, typography, theme and page-turn controls. Long-press text to copy or add a note.
-- **Read-aloud:** enable it in app settings, then use the reader's headphone control. Offline models can be downloaded, imported, selected and previewed inside the app, and use additional storage.
-- **File location:** view or copy the recorded source in book details. Directory navigation depends on access provided by the originating app. The private reading copy can be saved to a folder of your choice.
+### Reading
 
-## Release status
+- Horizontal pagination and vertical scrolling, contents, bookmarks and progress navigation.
+- Adjustable fonts, text size, line and paragraph spacing, margins, gestures and page-turn behavior.
+- Two visual styles, with light, dark and system appearance modes.
+- Separate reading colors, night mode, brightness controls and break reminders.
 
-Version 0.3.13 prevents callbacks from outgoing reader pages from overwriting a newly requested chapter, and requires the requested chapter to be acknowledged before neighboring pages can take over.
+### Notes and search
 
-**42 targeted regression tests**, the release build and signature checks passed. Verification against the reported EPUB on the original phone remains pending. These local results do not establish compatibility with every EPUB, device or speech model.
+- Long-press text to select, copy, underline, highlight or write a note.
+- Browse, filter, edit and export excerpts and annotations, or return to their source.
+- In-book and library-wide text search.
 
-- [Yijuan changelog](CHANGELOG.md)
-- [0.3.13 fix and validation report](docs/content-engine/reports/0.3.13-report-navigation-generation.md) (Chinese)
-- [Settings structure](docs/SETTINGS_TREE.md) (Chinese)
+### Statistics and data
 
-Report issues in [this repository](https://github.com/yizisha/yijuan/issues), with the app version, phone model, file format and reproduction steps. You do not need to publish entire books or personal backups.
+- Weekly, monthly and yearly reading time, trends, heatmaps and metrics.
+- Reading goals and reminders.
+- Local backup, restore, automatic backup and library export.
+- App lock and PIN.
 
-## Build from source
+### Read-aloud
 
-The locally validated environment is **JDK 21 and Android SDK 35**. The repository includes the Gradle Wrapper and sherpa-onnx 1.13.8 AAR. Speech models are not required to build the app.
+Read-aloud is disabled by default and can be enabled in **Settings → App**. It supports system speech and separately downloaded or imported offline models, with in-app management, selection and previews.
 
-```bash
-git clone https://github.com/yizisha/yijuan.git
-cd yijuan
-./gradlew :app:assembleDebug
-./gradlew :app:assembleRelease
-```
+## Usage tips
 
-On Windows, use `./gradlew.bat` for the same tasks. The first build requires network access for Gradle and other dependencies. Configure the Android SDK through your local environment or `local.properties`. The build script currently uses the debug signing configuration, so locally built packages may not match the signature of the published APK.
+- Tap the library group selector to switch groups. Status filters follow that group; Favorites always uses the full library.
+- Tap while reading to open the toolbar. Settings provides font, typography, theme and page-turn controls.
+- Opening a source folder depends on access granted by the originating app. The private reading copy can be saved to a location of your choice.
 
-| Module | Responsibility |
-| --- | --- |
-| `app` | Application wiring, UI, repository implementations, importing and playback integration |
-| `core` | Shared components, themes, typography and utilities |
-| `domain` | Domain models, content locators and repository interfaces |
-| `data` | Room database, DAOs, entities and incremental migrations |
-| `feature/reader` | Pagination, reading positions, navigation and session timing |
-| `plugin-api`, `plugin/tts` | Speech interfaces and the system TTS implementation bundled with the app |
+See the [changelog](CHANGELOG.md) and [release notes](https://github.com/yizisha/yijuan/releases) for changes and known issues. Include the app version, device information and reproduction steps when reporting a problem.
 
-## Origin and license
+## Development
 
-Yijuan builds on the open-source [HuZaiGong / FlowReader](https://github.com/HuZaiGong/flowreader) codebase. Thanks to the original author and upstream contributors for that foundation.
+Built with Kotlin and Jetpack Compose. See [Contributing](CONTRIBUTING.md) and [Architecture](ARCHITECTURE.md) for build instructions and module details.
 
-**Yijuan and FlowReader are maintained as separate projects.** This repository's branding, UI changes, feature development and `0.x` versions belong to Yijuan. Upstream `v56.x` history and contributions are identified separately in the changelog and are not presented as Yijuan releases.
+## Attribution and license
 
-The project continues under [GNU GPL-3.0](LICENSE), retaining upstream copyright and license notices. Speech libraries, fonts and other third-party resources retain their respective licenses. See [speech sources and notices](app/src/main/assets/speech-licenses/SOURCES.txt) and [font licenses](core/src/main/assets/font_licenses). Downloaded speech models have their own license terms.
+Yijuan builds on the open-source [FlowReader](https://github.com/HuZaiGong/flowreader) codebase and is maintained and released independently in this repository. Thanks to HuZaiGong and the upstream contributors.
+
+The project uses [GNU GPL-3.0](LICENSE) and retains upstream copyright and license notices. Upstream releases are archived separately in [Upstream history](docs/UPSTREAM_CHANGELOG.md). Speech components and fonts retain their own licenses; see [speech notices](app/src/main/assets/speech-licenses/SOURCES.txt) and [font licenses](core/src/main/assets/font_licenses).

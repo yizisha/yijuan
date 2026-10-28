@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        感谢建议！FlowReader 是离线优先、隐私优先的项目：不做账号/云同步/遥测，全应用只有一个 INTERNET 权限，且无 WebView。与这些约束冲突的建议会被拒绝，详见 CONTRIBUTING.md。
-        Thanks for the suggestion! FlowReader is offline-first and privacy-minded: no accounts / cloud sync / telemetry, a single INTERNET permission, and no WebView. Requests conflicting with these constraints will be declined — see CONTRIBUTING.md.
+        感谢帮助改进一卷。请描述具体阅读场景、希望解决的问题，以及预期的使用方式。
+        Thank you for helping improve Yijuan. Describe the reading scenario, the problem and the expected behavior.
   - type: textarea
     id: motivation
     attributes:

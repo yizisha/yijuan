@@ -38,8 +38,8 @@
 
 可以通过以下方式向负责执行的社区领导者举报辱骂、骚扰或其他不可接受的行为：
 
-* 通过 GitHub 的私密渠道联系项目维护者 [@HuZaiGong](https://github.com/HuZaiGong)——可使用仓库 **Security** 选项卡中的私密报告入口（见 [SECURITY.md](SECURITY.md)），并注明这是行为准则举报；
-* 或通过 GitHub 平台对相关内容的「Report abuse」功能联系维护者。
+* 通过 GitHub 平台的「Report abuse」功能举报骚扰或隐私泄露；
+* 一般社区问题可联系本仓库维护者 [@yizisha](https://github.com/yizisha)，请勿在公开讨论中披露他人隐私。
 
 所有投诉都会被及时、公平地审查和调查。所有社区领导者都有义务尊重和保护任何事件举报者的隐私与安全。
 

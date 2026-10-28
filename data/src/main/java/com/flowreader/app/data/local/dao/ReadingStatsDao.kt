@@ -10,25 +10,25 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReadingStatsDao {
-    @Query("SELECT * FROM reading_stats WHERE bookId = :bookId ORDER BY date DESC")
+    @Query("SELECT * FROM reading_stats WHERE statsVersion >= 3 AND bookId = :bookId ORDER BY date DESC")
     fun getStatsByBookId(bookId: Long): Flow<List<ReadingStatsEntity>>
 
     @Query("SELECT * FROM reading_stats WHERE bookId = :bookId AND date = :date")
     suspend fun getStatsByDate(bookId: Long, date: String): ReadingStatsEntity?
 
-    @Query("SELECT * FROM reading_stats WHERE date = :date LIMIT 1")
+    @Query("SELECT * FROM reading_stats WHERE statsVersion >= 3 AND date = :date LIMIT 1")
     suspend fun getStatsByDateOnly(date: String): ReadingStatsEntity?
 
-    @Query("SELECT * FROM reading_stats")
+    @Query("SELECT * FROM reading_stats WHERE statsVersion >= 3")
     suspend fun getAllStats(): List<ReadingStatsEntity>
 
-    @Query("SELECT SUM(readTimeSeconds) FROM reading_stats WHERE date = :date")
+    @Query("SELECT SUM(readTimeSeconds) FROM reading_stats WHERE statsVersion >= 3 AND date = :date")
     suspend fun getTodayReadTime(date: String): Long?
 
-    @Query("SELECT SUM(readPages) FROM reading_stats WHERE date = :date")
+    @Query("SELECT SUM(readPages) FROM reading_stats WHERE statsVersion >= 3 AND date = :date")
     suspend fun getTodayReadPages(date: String): Int?
 
-    @Query("SELECT * FROM reading_stats ORDER BY date DESC LIMIT :limit")
+    @Query("SELECT * FROM reading_stats WHERE statsVersion >= 3 ORDER BY date DESC LIMIT :limit")
     fun getRecentStats(limit: Int = 30): Flow<List<ReadingStatsEntity>>
 
     /**
@@ -36,7 +36,7 @@ interface ReadingStatsDao {
      * holds one row per book per day, so a row limit is not a day limit — see
      * `ReadingStatsRepositoryImpl.getRecentDailyStats`.
      */
-    @Query("SELECT * FROM reading_stats WHERE date >= :startDate ORDER BY date DESC")
+    @Query("SELECT * FROM reading_stats WHERE statsVersion >= 3 AND date >= :startDate ORDER BY date DESC")
     fun getStatsSince(startDate: String): Flow<List<ReadingStatsEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -48,9 +48,9 @@ interface ReadingStatsDao {
     @Query("DELETE FROM reading_stats WHERE bookId = :bookId")
     suspend fun deleteStatsByBookId(bookId: Long)
 
-    @Query("SELECT SUM(readTimeSeconds) FROM reading_stats")
+    @Query("SELECT SUM(readTimeSeconds) FROM reading_stats WHERE statsVersion >= 3")
     suspend fun getTotalReadTime(): Long?
 
-    @Query("SELECT SUM(readPages) FROM reading_stats")
+    @Query("SELECT SUM(readPages) FROM reading_stats WHERE statsVersion >= 3")
     suspend fun getTotalReadPages(): Int?
 }

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" tests="32" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:14:23.092Z" hostname="LAPTOP-L7547A4M" time="15.024">
+  <properties/>
+  <testcase name="seriesEndOffersTheNextManualVolumeAndUpdatesAfterAMoveOrDelete" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="11.033"/>
+  <testcase name="settledContinuousPageAdoptsPreparedContentWithoutRestartingNavigation" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.182"/>
+  <testcase name="slowProgressWriteDoesNotDelayChapterDisplayOrBlockTheNextTurn" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.177"/>
+  <testcase name="pagedBookmarkStoresMeasuredSourceOffsetAndSurvivesAChapterRoundTrip" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.271"/>
+  <testcase name="rapidPageTurnChoicesPersistOnlyTheLatestSnapshotAndKeepTheChapterPosition" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.169"/>
+  <testcase name="bookmarkFailureIsFeedbackAndDoesNotReplaceTheReadingContent" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.1"/>
+  <testcase name="bookmarkWithAnOldStaleChapterLocatorStillReturnsToItsRecordedChapter" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.089"/>
+  <testcase name="slowSettingsSaveCannotRestoreAnOldSelectionAndLaterExternalChangesStillApply" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.131"/>
+  <testcase name="cancelledSlowWriteCannotOverwriteTheLatestChapter" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.148"/>
+  <testcase name="tocChapterStartOverridesAPendingLocatorInTheSameChapter" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.159"/>
+  <testcase name="cancelledBookmarkSaveDoesNotReportAnErrorOrFalseSuccess" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.085"/>
+  <testcase name="globalSearchRouteMapsSparseStoredChapterIndexBeforeLanding" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.066"/>
+  <testcase name="readerRestoresPositionFromPersistedTextLocator" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.238"/>
+  <testcase name="tocOpensTheChapterStartInsteadOfItsPreviouslyRememberedLastPage" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.083"/>
+  <testcase name="cancelledBookSearchCannotPublishLateResults" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.157"/>
+  <testcase name="multiBlockNotePersistsTheAuthoritativeRangesAndComment" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.103"/>
+  <testcase name="failedChapterLoadKeepsCurrentChapterAndAllowsRetry" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.112"/>
+  <testcase name="adjacentChapterPresentationIsPreparedBeforeNavigationAndReused" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.178"/>
+  <testcase name="bookmarkFeedbackWaitsForPersistenceAndKeepsTheSavedPosition" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.098"/>
+  <testcase name="failedSettingsSaveReleasesThePendingSelectionAndCanRetry" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.122"/>
+  <testcase name="explicitJumpCannotBeReversedBeforeItsFirstPageIsAcknowledged" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.069"/>
+  <testcase name="nextAndPreviousAreSymmetricAndUseStoredIndexOnlyForContent" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.105"/>
+  <testcase name="bookmarkNavigationUsesItsChapterAndMeasuredLocatorInsteadOfAPageNumber" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.087"/>
+  <testcase name="readerVisibilityFlushesOnlyForegroundReadingTime" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.142"/>
+  <testcase name="selectedNotePersistsItsTextAndOriginalChapterBeforeANavigation" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.091"/>
+  <testcase name="duplicateRequestsAndLatePositionCallbacksCannotRaceLoading" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.119"/>
+  <testcase name="readerStateIsPersistedWithMonotonicSequence" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.216"/>
+  <testcase name="searchHitInUnloadedSparseChapterLoadsTargetAndKeepsUtf16Offset" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.106"/>
+  <testcase name="selectedTextBookmarkAlsoReportsPersistenceSuccess" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.113"/>
+  <testcase name="stayingOnTheSamePageForTwelveMinutesStillRecordsTwelveMinutes" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.102"/>
+  <testcase name="bookSearchReadFailureHasMessageInsteadOfFalseNoMatch" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.09"/>
+  <testcase name="pageTurnSettingsSurviveWidgetEmissionsBeforeTheirDebouncedSave" classname="com.flowreader.app.ui.screens.reader.ReaderNavigationTest" time="0.076"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\lenovo\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.14.17\e3c251a39dc90badaf71c83427ba46840f219d8d\byte-buddy-agent-1.14.17.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>

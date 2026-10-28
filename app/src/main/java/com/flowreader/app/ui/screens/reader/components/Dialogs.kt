@@ -193,6 +193,7 @@ fun ShareProgressDialog(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun SearchDialog(
     query: String,
     results: List<FtsSearchResult>,
@@ -200,13 +201,16 @@ fun SearchDialog(
     hasSearched: Boolean,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
-    onResultClick: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onResultClick: (Int, Int) -> Unit,
+    onDismiss: () -> Unit,
+    progress: com.flowreader.app.domain.repository.SearchProgress? = null,
+    error: String? = null,
+    onCancel: () -> Unit = {}
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.reader_search_title)) },
-        text = {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(stringResource(R.string.reader_search_title), style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(12.dp))
             Column {
                 OutlinedTextField(
                     value = query,
@@ -224,12 +228,16 @@ fun SearchDialog(
                     enabled = query.isNotBlank() && !isSearching
                 ) {
                     if (isSearching) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        Text(stringResource(R.string.search_preparing))
                     } else {
                         Text(stringResource(R.string.action_search))
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
+                if (isSearching) {
+                    com.flowreader.app.ui.screens.search.SearchProgressRow(progress, onCancel)
+                }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (results.isNotEmpty()) {
                     Text(
                         stringResource(R.string.reader_search_results, results.size),
@@ -241,11 +249,16 @@ fun SearchDialog(
                         // at most one row per chapter and chapterIndex is a unique key.
                         items(results.size, key = { results[it].chapterIndex }) { index ->
                             val result = results[index]
+                            // 未定位的命中必须如实标注，不能让用户以为会精确跳转。
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
-                                    .clickable { onResultClick(result.chapterIndex) }
+                                    .clickable {
+                                        // 带上已验证的章内偏移；-1 表示未定位，由调用方退回章首
+                                        // 并如实标注为近似。
+                                        onResultClick(result.chapterIndex, result.locatorOffset)
+                                    }
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
@@ -264,7 +277,7 @@ fun SearchDialog(
                             }
                         }
                     }
-                } else if (!isSearching && hasSearched && query.isNotEmpty()) {
+                } else if (!isSearching && hasSearched && query.isNotEmpty() && error == null) {
                     Text(
                         stringResource(R.string.reader_search_no_results),
                         style = MaterialTheme.typography.bodyMedium,
@@ -272,9 +285,7 @@ fun SearchDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
         }
-    )
+    }
 }

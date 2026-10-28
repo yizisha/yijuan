@@ -258,4 +258,46 @@ class ReaderTextMappingTest {
         assertEquals(42, content.rawOffsets[0])
         assertEquals(43, content.rawOffsets[1])
     }
+
+    @Test fun underlineKeepsSourceMappingAndTextIdenticalToSoftHighlight() {
+        val text = "前文**山河**后文"
+        val annotations = listOf(annotation(2, 8))
+        val wash = buildParagraphContent(text, 0, annotations, true)
+        val line = buildParagraphContent(
+            text,
+            0,
+            annotations,
+            true,
+            annotationDisplayStyle = com.flowreader.app.domain.model.AnnotationDisplayStyle.UNDERLINE
+        )
+        assertEquals(wash.annotatedString.text, line.annotatedString.text)
+        org.junit.Assert.assertArrayEquals(wash.rawOffsets, line.rawOffsets)
+        val span = line.annotatedString.spanStyles.last()
+        assertEquals(androidx.compose.ui.text.style.TextDecoration.Underline, span.item.textDecoration)
+        assertEquals(androidx.compose.ui.graphics.Color.Unspecified, span.item.background)
+        assertEquals(4, span.start)
+        assertEquals(6, span.end)
+    }
+
+    @Test fun legacyUnderlineAlwaysRemainsAStrokeInHighlightMode() {
+        val result = buildParagraphContent(
+            "山河破碎",
+            0,
+            listOf(annotation(0, 4).copy(type = com.flowreader.app.domain.model.AnnotationType.UNDERLINE)),
+            false
+        )
+        assertEquals(
+            androidx.compose.ui.text.style.TextDecoration.Underline,
+            result.annotatedString.spanStyles.single().item.textDecoration
+        )
+    }
+
+    @Test fun softHighlightUsesMutedColoursWithoutChangingLegacyData() {
+        val stored = annotation(0, 2)
+        val result = buildParagraphContent("山河破碎", 0, listOf(stored), false)
+        val colour = result.annotatedString.spanStyles.single().item.background
+        assertEquals(.22f, colour.alpha, .001f)
+        assertEquals(0xFFFFFF00, stored.color.colorValue)
+        org.junit.Assert.assertTrue(colour.blue > .3f)
+    }
 }

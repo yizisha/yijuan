@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FlowReader</string>
+    <string name="app_name">一卷</string>
     <string name="widget_reading_progress_description">Текущий прогресс чтения</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_confirm">ОК</string>
@@ -26,7 +26,7 @@
     <string name="reader_bookmark_entry">Глава %1$d · позиция %2$d</string>
     <string name="reader_bookmark_current"> · текущая глава</string>
     <string name="reader_toggle_controls">Показать или скрыть панель управления</string>
-    <string name="library_title">FlowReader</string>
+    <string name="library_title">一卷</string>
     <string name="library_search_placeholder">Поиск по названию, автору или тексту</string>
     <string name="library_search_exit">Выйти из поиска</string>
     <string name="library_fulltext_hits">Результаты полнотекстового поиска (%1$d)</string>
@@ -101,7 +101,7 @@
     <string name="settings_restore">Восстановить данные</string>
     <string name="settings_restore_desc">Импорт из файла резервной копии</string>
     <string name="settings_section_about">О приложении</string>
-    <string name="settings_about">О FlowReader</string>
+    <string name="settings_about">О 一卷</string>
     <string name="settings_version">Версия %1$s</string>
     <string name="settings_about_desc">Офлайн-читалка электронных книг</string>
     <string name="settings_about_thanks">Спасибо этим проектам с открытым кодом:</string>
@@ -162,6 +162,7 @@
     <string name="search_title">Глобальный поиск</string>
     <string name="search_section_books">Книги (%1$d)</string>
     <string name="search_section_chapters">Главы (%1$d)</string>
+    <string name="search_match_approximate">Приблизительное расположение</string>
     <string name="search_no_books">Нет книг, подходящих по названию или автору</string>
     <string name="search_load_more">Загрузить ещё результаты по главам</string>
     <string name="search_history_title">История поиска</string>
@@ -285,9 +286,15 @@
     <string name="reader_pdf_page">Страница PDF %1$d</string>
     <string name="reader_illustration">Иллюстрация</string>
     <string name="reader_illustration_missing">Иллюстрация отсутствует</string>
+    <string name="reader_illustration_failed">Не удалось показать изображение</string>
+    <string name="reader_illustration_alt">Изображение: %1$s</string>
+    <string name="reader_image_preview_open">Увеличить</string>
+    <string name="reader_image_preview_close">Закрыть просмотр</string>
+    <string name="reader_image_preview_hint">Масштаб двумя пальцами, перетаскивание, нажмите для закрытия</string>
     <string name="reader_comic_page">Страница комикса %1$d</string>
     <string name="reader_chapter_indicator">Глава %1$d из %2$d</string>
     <string name="reader_chapter_empty">В этой главе нет содержимого</string>
+    <string name="reader_chapter_paginating">Вёрстка страницы…</string>
 
     <!-- v56.5.1: длительность и даты (единицы были жёстко заданы в FlowFormatters в :core) -->
     <string name="duration_seconds">%1$d с</string>
@@ -331,4 +338,9 @@
     <string name="reader_bookmark_default">Закладка выделенного текста</string>
     <string name="reader_pdf_annotation_on">Режим аннотаций</string>
     <string name="reader_pdf_annotation_off">Выйти из режима аннотаций</string>
+    <string name="notes_tab_highlights">Выделения</string>
+    <string name="reader_font_system_short">Система</string>
+    <string name="reader_font_serif_short">Serif</string>
+    <string name="reader_font_sans_short">Sans</string>
+    <string name="library_import_files">Выбрать локальные файлы</string>
 </resources>

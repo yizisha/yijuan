@@ -9,4 +9,7 @@
     <string name="flow_action_close_selection">Exit selection</string>
     <string name="flow_selection_count">%1$d selected</string>
     <string name="flow_cover_description">Cover of %1$s</string>
+    <string name="flow_customized">Customized</string>
+    <string name="flow_expanded">Expanded</string>
+    <string name="flow_collapsed">Collapsed</string>
 </resources>

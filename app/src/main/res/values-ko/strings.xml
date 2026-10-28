@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">플로우리더</string>
+    <string name="app_name">一卷</string>
     <string name="widget_reading_progress_description">현재 읽기 진행률</string>
 
     <string name="action_cancel">취소</string>
@@ -30,7 +30,7 @@
     <string name="reader_bookmark_current"> · 현재 장</string>
     <string name="reader_toggle_controls">읽기 컨트롤 표시 전환</string>
 
-    <string name="library_title">플로우리더</string>
+    <string name="library_title">一卷</string>
     <string name="library_search_placeholder">제목, 저자 또는 전문 검색</string>
     <string name="library_search_exit">검색 종료</string>
     <string name="library_fulltext_hits">전문 검색 결과 (%1$d)</string>
@@ -107,7 +107,7 @@
     <string name="settings_restore">데이터 복원</string>
     <string name="settings_restore_desc">백업 파일에서 가져옵니다</string>
     <string name="settings_section_about">정보</string>
-    <string name="settings_about">플로우리더 정보</string>
+    <string name="settings_about">一卷 정보</string>
     <string name="settings_version">버전 %1$s</string>
     <string name="settings_about_desc">오프라인 우선 전자책 리더</string>
     <string name="settings_about_thanks">다음 오픈소스 프로젝트에 감사합니다:</string>
@@ -175,6 +175,7 @@
     <string name="search_title">서재 검색</string>
     <string name="search_section_books">도서 (%1$d)</string>
     <string name="search_section_chapters">챕터 일치 (%1$d)</string>
+    <string name="search_match_approximate">대략적인 위치</string>
     <string name="search_no_books">제목이나 저자가 일치하는 도서가 없습니다</string>
     <string name="search_load_more">챕터 결과 더 불러오기</string>
     <string name="search_history_title">검색 기록</string>
@@ -295,9 +296,15 @@
     <string name="reader_pdf_page">PDF %1$d페이지</string>
     <string name="reader_illustration">삽화</string>
     <string name="reader_illustration_missing">삽화 없음</string>
+    <string name="reader_illustration_failed">이미지를 표시할 수 없습니다</string>
+    <string name="reader_illustration_alt">이미지: %1$s</string>
+    <string name="reader_image_preview_open">크게 보기</string>
+    <string name="reader_image_preview_close">미리보기 닫기</string>
+    <string name="reader_image_preview_hint">두 손가락으로 확대, 드래그로 이동, 빈 곳을 눌러 닫기</string>
     <string name="reader_comic_page">만화 %1$d페이지</string>
     <string name="reader_chapter_indicator">%1$d / %2$d장</string>
     <string name="reader_chapter_empty">이 장에는 내용이 없습니다</string>
+    <string name="reader_chapter_paginating">조판 중…</string>
 
     <!-- v56.5.1: 시간과 날짜 (단위는 이전에 :core의 FlowFormatters에 하드코딩되어 있었음) -->
     <string name="duration_seconds">%1$d초</string>
@@ -341,4 +348,9 @@
     <string name="reader_bookmark_default">선택한 텍스트 북마크</string>
     <string name="reader_pdf_annotation_on">주석 모드</string>
     <string name="reader_pdf_annotation_off">주석 모드 종료</string>
+    <string name="notes_tab_highlights">하이라이트</string>
+    <string name="reader_font_system_short">시스템</string>
+    <string name="reader_font_serif_short">명조</string>
+    <string name="reader_font_sans_short">고딕</string>
+    <string name="library_import_files">로컬 파일 선택</string>
 </resources>

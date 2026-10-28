@@ -9,19 +9,24 @@ import com.flowreader.app.domain.repository.AnnotationExportFormat
 import com.flowreader.app.domain.repository.AnnotationRepository
 import com.flowreader.app.domain.repository.BookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** An annotation resolved against the book it came from. */
 data class NoteItem(
     val annotation: Annotation,
-    val bookTitle: String
+    val bookTitle: String,
+    val author: String = "",
+    val coverPath: String? = null
 )
+
+internal val NoteItem.isHighlightOnly: Boolean
+    get() = annotation.note.isBlank() && annotation.type != com.flowreader.app.domain.model.AnnotationType.NOTE
 
 data class NotesUiState(
     val notes: List<NoteItem> = emptyList(),
@@ -65,7 +70,7 @@ class NotesViewModel @Inject constructor(
                 query,
                 bookFilter
             ) { annotations, books, text, filter ->
-                val titles = books.associate { it.id to it.title }
+                val booksById = books.associateBy { it.id }
                 val trimmed = text.trim()
                 val visible = annotations
                     .filter { filter == null || it.bookId == filter }
@@ -74,7 +79,10 @@ class NotesViewModel @Inject constructor(
                             annotation.selectedText.contains(trimmed, ignoreCase = true) ||
                             annotation.note.contains(trimmed, ignoreCase = true)
                     }
-                    .map { NoteItem(it, titles[it.bookId].orEmpty()) }
+                    .map { annotation ->
+                        val book = booksById[annotation.bookId]
+                        NoteItem(annotation, book?.title.orEmpty(), book?.author.orEmpty(), book?.coverPath)
+                    }
 
                 // Only books that actually carry annotations become filter chips; the full shelf
                 // would bury the three books the user has ever highlighted.
@@ -102,6 +110,13 @@ class NotesViewModel @Inject constructor(
         bookFilter.value = bookId
     }
 
+    fun updateNote(annotation: Annotation, note: String) {
+        viewModelScope.launch {
+            runCatching { annotationRepository.updateAnnotation(annotation.copy(note = note, modifiedTime = java.util.Date())) }
+                .onFailure { error -> _uiState.update { it.copy(error = error.message ?: "笔记保存失败") } }
+        }
+    }
+
     fun deleteNote(annotationId: Long) {
         viewModelScope.launch {
             runCatching { annotationRepository.deleteAnnotationById(annotationId) }
@@ -110,8 +125,8 @@ class NotesViewModel @Inject constructor(
     }
 
     /** Exports exactly what is on screen, so a book filter or a search narrows the export too. */
-    fun exportVisible(format: AnnotationExportFormat) {
-        val visible = _uiState.value.notes
+    fun exportVisible(format: AnnotationExportFormat, highlightsOnly: Boolean? = null) {
+        val visible = _uiState.value.notes.filter { highlightsOnly == null || it.isHighlightOnly == highlightsOnly }
         val titles = visible.associate { it.annotation.bookId to it.bookTitle }
         val text = AnnotationExporter.export(
             annotations = visible.map { it.annotation },

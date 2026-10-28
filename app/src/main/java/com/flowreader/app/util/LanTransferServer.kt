@@ -41,7 +41,7 @@ class LanTransferServer(private val file: File) {
 
     fun start(): String? {
         if (active) return url
-        val bytes = file.readBytesOrNull() ?: return null
+        if (!file.isFile || !file.canRead()) return null
         val ip = localIpv4Address() ?: return null
         token = TOKEN_CHARS.generateToken(16)
 
@@ -55,7 +55,7 @@ class LanTransferServer(private val file: File) {
             active = true
             val port = socket.localPort
             url = "http://$ip:$port/backup/$token"
-            executor.execute { serve(socket, bytes) }
+            executor.execute { serve(socket) }
             url
         } catch (e: Exception) {
             active = false
@@ -72,7 +72,7 @@ class LanTransferServer(private val file: File) {
         executor.shutdownNow()
     }
 
-    private fun serve(socket: ServerSocket, payload: ByteArray) {
+    private fun serve(socket: ServerSocket) {
         while (active) {
             val client = try {
                 socket.accept()
@@ -89,14 +89,14 @@ class LanTransferServer(private val file: File) {
                     if (accepted) {
                         val headers = buildString {
                             append("HTTP/1.1 200 OK\r\n")
-                            append("Content-Type: application/json\r\n")
-                            append("Content-Length: ${payload.size}\r\n")
+                            append("Content-Type: application/zip\r\n")
+                            append("Content-Length: ${file.length()}\r\n")
                             append("Connection: close\r\n")
                             append("X-FlowReader-Backup: 1\r\n")
                             append("\r\n")
                         }
                         output.write(headers.toByteArray(Charsets.US_ASCII))
-                        output.write(payload)
+                        file.inputStream().use { it.copyTo(output, 64 * 1024) }
                     } else {
                         val body = "404 Not Found".toByteArray(Charsets.US_ASCII)
                         val headers = buildString {
@@ -117,15 +117,7 @@ class LanTransferServer(private val file: File) {
         runCatching { socket.close() }
     }
 
-    private fun File.readBytesOrNull(): ByteArray? =
-        try {
-            if (length() > MAX_PAYLOAD_BYTES) null else readBytes()
-        } catch (e: Exception) {
-            null
-        }
-
     companion object {
-        private const val MAX_PAYLOAD_BYTES = 200L * 1024 * 1024
         private const val TOKEN_CHARS = "0123456789abcdef"
 
         fun localIpv4Address(): String? = runCatching {

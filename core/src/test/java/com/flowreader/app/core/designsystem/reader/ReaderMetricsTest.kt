@@ -62,4 +62,36 @@ class ReaderMetricsTest {
         assertTrue(ReaderMetrics.chapterTitleSizeSp(18) > ReaderMetrics.headingSizeSp(18))
         assertTrue(ReaderMetrics.headingSizeSp(18) > 18f)
     }
+
+    @Test
+    fun marginNarrowsTheMeasure() {
+        val wide = ReaderMetrics.contentWidthDp(availableWidthDp = 400f, fontSize = 18, marginDp = 0f, lineChars = 34)
+        val narrow = ReaderMetrics.contentWidthDp(availableWidthDp = 400f, fontSize = 18, marginDp = 40f, lineChars = 34)
+        assertEquals(320f, narrow, 0.01f)
+        assertTrue(narrow < wide)
+    }
+
+    @Test
+    fun lineCharsCapsTheMeasureOnWideScreens() {
+        val capped = ReaderMetrics.contentWidthDp(availableWidthDp = 1200f, fontSize = 18, marginDp = 20f, lineChars = 34)
+        assertEquals(18f * 34f, capped, 0.01f)
+    }
+
+    @Test
+    fun marginAndLineCharsAreClampedToTheirRange() {
+        // Out-of-range stored values must not produce a zero-width or absurd column.
+        val width = ReaderMetrics.contentWidthDp(availableWidthDp = 360f, fontSize = 18, marginDp = 999f, lineChars = 999)
+        assertTrue(width > 0f)
+        assertTrue(width <= 360f)
+    }
+
+    @Test
+    fun titleGapIsSmallerThanTheParagraphGap() {
+        // A larger title gap pushed the first line of a chapter onto the next page, so it is kept
+        // below one paragraph gap; the renderer still separates the title from the body.
+        val gap = ReaderMetrics.paragraphSpacingDp(18, 1f)
+        val titleGap = ReaderMetrics.chapterTitleGapDp(18, 1f)
+        assertTrue(titleGap > 0f)
+        assertTrue(titleGap < gap)
+    }
 }

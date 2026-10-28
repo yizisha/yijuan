@@ -80,6 +80,45 @@ class ChapterRepositoryImpl @Inject constructor(
         return content
     }
 
+    override suspend fun getChapterContents(bookId: Long, indexes: List<Int>): Map<Int, String> {
+        if (indexes.isEmpty()) return emptyMap()
+        val distinct = indexes.distinct()
+        val result = mutableMapOf<Int, String>()
+        // 先吃缓存，剩下的**一次**查询补齐：逐条查库会让搜索结果验证变成 N+1。
+        val missing = mutableListOf<Int>()
+        distinct.forEach { index ->
+            val cached = cacheManager.getChapterContent(bookId, index)
+            if (cached != null) result[index] = cached else missing.add(index)
+        }
+        if (missing.isNotEmpty()) {
+            chapterDao.getChapterContents(bookId, missing).forEach { row ->
+                val content = row.content.orEmpty()
+                result[row.chapterIndex] = content
+                if (content.isNotEmpty()) {
+                    cacheManager.putChapterContent(bookId, row.chapterIndex, content)
+                }
+            }
+        }
+        return result
+    }
+
+    override suspend fun getTotalContentLength(bookId: Long): Long =
+        chapterDao.getTotalContentLength(bookId)
+
+    override suspend fun getChapterContentsForSearch(bookId: Long, indexes: List<Int>): Map<Int, String> =
+        if (indexes.isEmpty()) emptyMap() else chapterDao.getChapterContents(bookId, indexes.distinct())
+            .associate { it.chapterIndex to it.content.orEmpty() }
+
+    override suspend fun getTextUnitCounts(bookId: Long): List<Pair<Int, Long>> {
+        val indexed = chapterDao.getIndexedTextUnitCounts(bookId)
+        val counts = if (indexed.isNotEmpty() && indexed.size == chapterDao.getChapterCount(bookId)) indexed
+            else chapterDao.getTextUnitCounts(bookId)
+        return counts.map { it.chapterIndex to it.units }
+    }
+
+    override suspend fun getChapterTextLengths(bookId: Long): Map<Int, Int> =
+        chapterDao.getChapterTextLengths(bookId).associate { it.chapterIndex to it.lengthUtf16 }
+
     override suspend fun getChapterById(id: Long): Chapter? {
         return chapterDao.getChapterById(id)?.toDomain()
     }

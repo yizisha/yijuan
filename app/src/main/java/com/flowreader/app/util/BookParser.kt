@@ -6,11 +6,22 @@ import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import com.flowreader.app.core.util.TxtCleaner
 import com.flowreader.app.domain.model.Book
 import com.flowreader.app.domain.model.BookFormat
 import com.flowreader.app.domain.model.Chapter
+import com.flowreader.app.domain.model.PublicationManifest
+import com.flowreader.app.domain.model.StructuredDocument
+import com.flowreader.app.domain.model.TxtProcessingRules
+import com.flowreader.app.domain.repository.SettingsRepository
+import com.flowreader.app.util.epub.EpubDocumentParser
+import com.flowreader.app.util.epub.EpubNavigationParser
+import com.flowreader.app.util.epub.EpubPackageParser
+import com.flowreader.app.util.epub.EpubZipContainer
+import com.flowreader.app.util.epub.PublicationImportCoordinator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -38,12 +49,33 @@ data class BookParseResult(
     val book: Book,
     val chapters: List<Chapter>,
     val pdfPageCount: Int = 0,
-    val pdfFilePath: String? = null
+    val pdfFilePath: String? = null,
+    /**
+     * EPUB 新链路产物。**UI 不读它**，它只交给 `BookImporter` →
+     * `PublicationImportCoordinator` 落成内容包并激活 revision（主计划 16 节第 2 条：
+     * 不允许"生成了结构化数据却仍把 UI 交给旧路径"，所以旧解析路径已在本批删除）。
+     */
+    val publication: PublicationBundle? = null
+)
+
+/**
+ * 一次导入的完整结构化产物。
+ *
+ * `chapters` 已经是从 [manifest] 的 sections 投影出来的显示层结果，
+ * 因此 [manifest] 里的源坐标与 UI 看到的章节是**同一份内容**，不是两个事实源。
+ */
+data class PublicationBundle(
+    val manifest: PublicationManifest,
+    val documents: Map<String, StructuredDocument>,
+    val toc: List<EpubNavigationParser.Node>,
+    val diagnostics: List<String>
 )
 
 @Singleton
 class BookParser @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val settingsRepository: SettingsRepository,
+    private val publicationCoordinator: PublicationImportCoordinator
 ) {
     private val bufferSize = 8192
 
@@ -61,43 +93,66 @@ class BookParser @Inject constructor(
     /** Whole-document cap for TXT / Markdown / FB2 / MOBI single-file formats. */
     private val maxWholeFileBytes = 128L * 1024 * 1024
 
-    suspend fun parseBook(uri: Uri): Result<BookParseResult> = withContext(Dispatchers.IO) {
-        try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-                ?: return@withContext Result.failure(Exception("无法打开文件"))
+    suspend fun parseBook(uri: Uri, publicationId: String? = null, localCopyPath: String? = null): Result<BookParseResult> =
+        withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                    ?: return@withContext Result.failure(Exception("无法打开文件"))
 
-            val fileName = getFileName(uri)
-            val format = detectFormat(fileName)
-            val fileSize = getFileSize(uri)
+                val fileName = getFileName(uri)
+                val format = detectFormat(fileName)
+                val fileSize = getFileSize(uri)
 
-            when (format) {
-                BookFormat.EPUB -> {
-                    val coverInputStream = context.contentResolver.openInputStream(uri)
-                        ?: inputStream
-                    val coverPath = extractEpubCover(coverInputStream, fileName.removeSuffix(".epub"))
-                    val result = parseEpubStream(inputStream, fileName, fileSize)
-                    result.map { it.copy(book = it.book.copy(coverPath = coverPath)) }
-                }
-                BookFormat.TXT -> parseTxtStream(inputStream, fileName, fileSize)
-                BookFormat.MARKDOWN -> parseMarkdownStream(inputStream, fileName, fileSize)
-                BookFormat.PDF -> {
-                    val result = parsePdfStream(uri, fileName, fileSize)
-                    result.map { it.copy(book = it.book.copy(coverPath = extractPdfCover(uri))) }
-                }
-                BookFormat.FB2 -> parseFb2Stream(inputStream, fileName, fileSize)
-                BookFormat.MOBI -> parseMobiStream(inputStream, fileName, fileSize)
-                BookFormat.COMIC -> parseComicImageStream(inputStream, fileName, fileSize)
-                BookFormat.UNKNOWN -> {
-                    if (fileName.endsWith(".zip", ignoreCase = true) || fileName.endsWith(".cbz", ignoreCase = true)) {
-                        parseComicZipStream(inputStream, fileName, fileSize)
-                    } else {
-                        Result.failure(Exception("不支持的格式: $format"))
+                when (format) {
+                    BookFormat.EPUB -> {
+                        val coverInputStream = context.contentResolver.openInputStream(uri)
+                            ?: inputStream
+                        val coverPath = extractEpubCover(coverInputStream, fileName.removeSuffix(".epub"))
+                        val result = parseEpubViaContentEngine(
+                            inputStream = inputStream,
+                            fileName = fileName,
+                            fileSize = fileSize,
+                            publicationId = publicationId ?: java.util.UUID.randomUUID().toString()
+                        )
+                        result.map { it.copy(book = it.book.copy(coverPath = coverPath)) }
+                    }
+
+                    BookFormat.TXT -> parseTxtStream(inputStream, fileName, fileSize)
+                    BookFormat.MARKDOWN -> parseMarkdownStream(inputStream, fileName, fileSize)
+                    BookFormat.PDF -> {
+                        inputStream.close()
+                        val result = parsePdfStream(uri, fileName, fileSize, localCopyPath)
+                        result.map { it.copy(book = it.book.copy(coverPath = extractPdfCover(Uri.fromFile(File(it.book.filePath))))) }
+                    }
+
+                    BookFormat.FB2 -> parseFb2Stream(inputStream, fileName, fileSize)
+                    BookFormat.MOBI -> parseMobiStream(inputStream, fileName, fileSize)
+                    BookFormat.COMIC -> parseComicImageStream(inputStream, fileName, fileSize)
+                    BookFormat.UNKNOWN -> {
+                        if (fileName.endsWith(".zip", ignoreCase = true) || fileName.endsWith(".cbz", ignoreCase = true)) {
+                            parseComicZipStream(inputStream, fileName, fileSize)
+                        } else {
+                            Result.failure(Exception("不支持的格式: $format"))
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                Result.failure(e)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+        }.map { it.withWordCount() }
+
+    /**
+     * Stamps the character count onto the parsed book.
+     *
+     * Measured here, once, instead of at display time: 书籍详情 shows it immediately and the reader
+     * would otherwise have to walk every chapter's text. Whitespace is excluded so the number
+     * matches what readers call 字数.
+     */
+    private fun BookParseResult.withWordCount(): BookParseResult {
+        val count = chapters.sumOf { chapter ->
+            chapter.content.count { !it.isWhitespace() }
         }
+        return copy(book = book.copy(wordCount = count, totalChapters = chapters.size))
     }
 
     fun parseBookWithProgress(uri: Uri) = flow {
@@ -112,7 +167,12 @@ class BookParser @Inject constructor(
                 when (format) {
                     BookFormat.EPUB -> {
                         emit(ParseProgress.Reading(0, fileSize))
-                        val result = parseEpubStream(inputStream, fileName, fileSize)
+                        val result = parseEpubViaContentEngine(
+                            inputStream = inputStream,
+                            fileName = fileName,
+                            fileSize = fileSize,
+                            publicationId = java.util.UUID.randomUUID().toString()
+                        )
                         emit(ParseProgress.Parsing)
                         result
                     }
@@ -244,118 +304,126 @@ class BookParser @Inject constructor(
         return uri.path?.let { path -> File(path).takeIf { it.isFile }?.length() } ?: 0L
     }
 
-    private fun parseEpubStream(inputStream: InputStream, fileName: String, fileSize: Long): Result<BookParseResult> {
+    /**
+     * EPUB 导入（主计划 4.1 / 第 16 节第 2 条）。
+     *
+     * **旧路径已删除**：这里不再是 `htmlToFormattedText` + `[IMG:绝对路径]`。
+     * 现在按 4.1 的七步流水线走独立可测组件：
+     * `EpubZipContainer` → `EpubPackageParser` → `EpubNavigationParser` → `EpubDocumentParser`
+     * → `ReadingManifestBuilder` → `PublicationStore`（文件侧）→ `PublicationImportCoordinator`（数据库侧）。
+     *
+     * 因此：
+     * - 正文以规范源文本 + 结构块保存，粗体/斜体/链接/列表不再被压成文本（修 F09）；
+     * - 图片是结构对象（`resourceId` 摘要命名），不再产生 `[IMG:…]` 字符串标记（修 F10/F11）；
+     * - 目录保留层级与 `<span>` 卷头，同一 XHTML 的多个锚点各自成为目录目标（修 F05/F06）；
+     * - 章节来自 manifest 的 sections，**不再按 8,000 字物理分片**，所以没有 `(1)(2)` 伪章节（修 F13）；
+     * - 卷字段由目录树的卷分组投影得到，不再丢失（修 F08）。
+     *
+     * 返回的 `chapters` 是**显示层投影**（内容来自同一个 manifest 的源区间），
+     * 与 [PublicationBundle.manifest] 不是两个事实源。
+     */
+    private fun parseEpubViaContentEngine(
+        inputStream: InputStream,
+        fileName: String,
+        fileSize: Long,
+        publicationId: String
+    ): Result<BookParseResult> {
+        val title = fileName.removeSuffix(".epub")
+        val workFile = File(context.cacheDir, "epub-in/${sha256Hex(publicationId.toByteArray())}.epub")
         return try {
-            val tempFile = File(context.cacheDir, "temp_epub_parse_${System.currentTimeMillis()}.zip")
+            workFile.parentFile?.mkdirs()
             inputStream.use { input ->
-                FileOutputStream(tempFile).use { output ->
-                    input.copyTo(output)
-                }
+                FileOutputStream(workFile).use { output -> input.copyTo(output) }
             }
 
-            val title = fileName.removeSuffix(".epub")
-            val chapters = mutableListOf<Chapter>()
-            var author = "未知作者"
-            var description = ""
+            // revision 由原始字节 + 规范化/解析器版本组成（3.1：资源或规范源文本改变必须变更）。
+            val revision = sha256Hex(
+                workFile.readBytes() +
+                    byteArrayOf(1) +
+                    "${StructuredDocument.CURRENT_NORMALIZATION_VERSION}:${StructuredDocument.CURRENT_SCHEMA_VERSION}"
+                        .toByteArray(Charsets.UTF_8)
+            )
 
-            ZipFile(tempFile).use { zip ->
-                val containerEntry = zip.getEntry("META-INF/container.xml")
-                    ?: return@use
-                val containerXml = Jsoup.parse(zip.getInputStream(containerEntry).bufferedReader().readText())
-                val opfPath = containerXml.select("rootfile").attr("full-path")
-                if (opfPath.isBlank()) return@use
-
-                val opfEntry = zip.getEntry(opfPath) ?: return@use
-                val opfDoc = Jsoup.parse(zip.getInputStream(opfEntry).bufferedReader().readText())
-
-                opfDoc.select("creator").firstOrNull()?.let { author = it.text() }
-                opfDoc.select("description").firstOrNull()?.let { description = it.text() }
-
-                val opfBaseDir = opfPath.substringBeforeLast("/", "")
-                val itemMap = mutableMapOf<String, String>()
-                opfDoc.select("manifest > item").forEach { item ->
-                    val itemId = item.attr("id")
-                    val href = item.attr("href")
-                    itemMap[itemId] = if (opfBaseDir.isNotEmpty()) "$opfBaseDir/$href" else href
-                }
-
-                val spineRefs = mutableListOf<String>()
-                opfDoc.select("spine > itemref").forEach { ref ->
-                    val refId = ref.attr("idref")
-                    itemMap[refId]?.let { spineRefs.add(it) }
-                }
-
-                val imageDir = File(context.cacheDir, "epub_images_${System.currentTimeMillis()}")
-                imageDir.mkdirs()
-                val imageHrefs = mutableMapOf<String, String>()
-                opfDoc.select("manifest > item").forEach { item ->
-                    val href = item.attr("href")
-                    val mediaType = item.attr("media-type")
-                    if (mediaType.startsWith("image/")) {
-                        val entryPath = if (opfBaseDir.isNotEmpty()) "$opfBaseDir/$href" else href
-                        val imageEntry = zip.getEntry(entryPath)
-                        if (imageEntry != null) {
-                            val imageBytes = readCappedBytes(zip.getInputStream(imageEntry), maxSingleImageBytes) ?: return@forEach
-                            val fileName = "img_${href.replace("/", "_").replace("\\", "_")}"
-                            val imageFile = File(imageDir, fileName)
-                            FileOutputStream(imageFile).use { it.write(imageBytes) }
-                            imageHrefs[href] = imageFile.absolutePath
-                        }
-                    }
-                }
-
-                var chapterIndex = 0
-                for (href in spineRefs) {
-                    val entry = zip.getEntry(href) ?: continue
-                    val htmlText = readCappedText(zip.getInputStream(entry), maxChapterReadBytes) ?: continue
-                    val htmlDoc = Jsoup.parse(htmlText)
-                    htmlDoc.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
-                    htmlDoc.select("script, style, nav").remove()
-
-                    val bodyText = htmlToFormattedText(htmlDoc.body(), imageHrefs).trim()
-                    if (bodyText.isBlank()) continue
-
-                    val chapterTitle = htmlDoc.select("title").firstOrNull()?.text()
-                        ?: "第 ${chapterIndex + 1} 章"
-
-                    chapterIndex = appendChunkedChapter(
-                        chapters = chapters,
-                        title = chapterTitle,
-                        content = bodyText,
-                        startPosition = 0,
-                        startIndex = chapterIndex
-                    )
-                }
+            val prepared = publicationCoordinator.prepareFromContainer(
+                publicationId = publicationId,
+                revision = revision,
+                containerFile = workFile
+            ).getOrElse { error ->
+                return Result.failure(Exception("EPUB 解析失败: ${error.message}", error))
             }
 
-            if (tempFile.exists()) {
-                tempFile.delete()
-            }
-
+            val chapters = publicationCoordinator.projectChapters(
+                manifest = prepared.manifest,
+                documents = prepared.documents,
+                toc = prepared.toc,
+                bookId = 0L
+            )
             if (chapters.isEmpty()) {
                 return Result.failure(Exception("未找到可解析的章节内容"))
             }
 
-            Result.success(
+            val metadata = readEpubMetadata(prepared.manifest.revision, workFile)
+            return Result.success(
                 BookParseResult(
                     book = Book(
                         title = title,
-                        author = author,
+                        author = metadata.first,
                         filePath = "",
                         coverPath = null,
-                        description = description,
+                        description = metadata.second,
                         fileSize = fileSize,
                         format = BookFormat.EPUB,
                         totalChapters = chapters.size
                     ),
-                    chapters = chapters
+                    chapters = chapters,
+                    publication = PublicationBundle(
+                        manifest = prepared.manifest,
+                        documents = prepared.documents,
+                        toc = prepared.toc,
+                        diagnostics = prepared.diagnostics
+                    )
                 )
             )
         } catch (e: Exception) {
             Result.failure(e)
+        } finally {
+            // 工作副本只用于本次解析；内容包已经在 revisions/ 下有可验证的 source 副本。
+            workFile.delete()
         }
     }
 
+    /**
+     * 从 OPF 读 `dc:creator` / `dc:description`。
+     *
+     * 只做元数据；正文一律走内容引擎。读不到就返回占位值，**不因为元数据缺失而让导入失败**。
+     */
+    private fun readEpubMetadata(revision: String, containerFile: File): Pair<String, String> {
+        if (!containerFile.isFile) return "未知作者" to ""
+        return try {
+            val opened = EpubZipContainer.open(containerFile)
+            if (opened !is EpubZipContainer.OpenResult.Opened) return "未知作者" to ""
+            opened.container.use { container ->
+                val containerXml = container.readEntryText("META-INF/container.xml").getOrNull()
+                    ?: return "未知作者" to ""
+                val opfPath = EpubPackageParser.parseRootFilePath(containerXml).first
+                    ?: return "未知作者" to ""
+                val opfXml = container.readEntryText(opfPath).getOrNull()
+                    ?: return "未知作者" to ""
+                val document = Jsoup.parse(opfXml, "", org.jsoup.parser.Parser.xmlParser())
+                val creator = document.select("creator").firstOrNull()?.text()?.trim().orEmpty()
+                val description = document.select("description").firstOrNull()?.text()?.trim().orEmpty()
+                (creator.ifEmpty { "未知作者" }) to description
+            }
+        } catch (e: Exception) {
+            // 元数据失败不影响导入。
+            "未知作者" to ""
+        }
+    }
+
+    private fun sha256Hex(bytes: ByteArray): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+        return digest.joinToString("") { "%02x".format(it) }
+    }
     private fun extractEpubCover(inputStream: InputStream, bookTitle: String): String? {
         return try {
             val tempFile = File(context.cacheDir, "temp_epub_${System.currentTimeMillis()}.zip")
@@ -410,9 +478,10 @@ class BookParser @Inject constructor(
                 PdfRenderer(pfd).use { renderer ->
                     if (renderer.pageCount > 0) {
                         renderer.openPage(0).use { page ->
+                            val (coverWidth, coverHeight) = pdfBitmapSize(page.width, page.height, 384)
                             val bitmap = Bitmap.createBitmap(
-                                page.width * 2,
-                                page.height * 2,
+                                coverWidth,
+                                coverHeight,
                                 Bitmap.Config.ARGB_8888
                             )
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -440,9 +509,10 @@ class BookParser @Inject constructor(
         }
     }
 
-    private fun htmlToFormattedText(
+    private fun htmlToFormattedTextForProjection(
         element: Element,
-        imageHrefs: Map<String, String>
+        imageHrefs: Map<String, String>,
+        baseDir: String = ""
     ): String {
         val sb = StringBuilder()
         for (node in element.childNodes()) {
@@ -458,45 +528,47 @@ class BookParser @Inject constructor(
                         tag.startsWith("h") && tag.length == 2 && tag[1] in '1'..'6' -> {
                             sb.appendLine()
                             sb.append("## ")
-                            sb.append(htmlToFormattedText(node, imageHrefs))
+                            sb.append(htmlToFormattedTextForProjection(node, imageHrefs, baseDir))
                             sb.appendLine()
                         }
                         tag == "b" || tag == "strong" -> {
-                            sb.append("**")
-                            sb.append(htmlToFormattedText(node, imageHrefs))
-                            sb.append("**")
+                            // Emphasis markers are deliberately NOT emitted: the reader renders
+                            // plain text in both page modes, so `**` leaked into the page as
+                            // literal asterisks (「首段被切成黑体加粗的章节名」).
+                            sb.append(htmlToFormattedTextForProjection(node, imageHrefs, baseDir))
                         }
                         tag == "i" || tag == "em" -> {
-                            sb.append("*")
-                            sb.append(htmlToFormattedText(node, imageHrefs))
-                            sb.append("*")
+                            sb.append(htmlToFormattedTextForProjection(node, imageHrefs, baseDir))
                         }
-                        tag == "img" -> {
-                            val src = node.attr("src")
-                            val savedPath = imageHrefs[src]
-                            if (savedPath != null) {
+                        tag == "img" || tag == "image" -> {
+                            // `<img src>` 的路径解析现在只由 `EpubResourceResolver` 一处负责（4.2）。
+                            // 本投影仅服务 MOBI/FB2 的 HTML 转文本，没有包内资源表，
+                            // 所以按容量上限明确留一个不带路径的占位诊断，**不再猜路径**
+                            // （旧的 basename 兜底正是 F11 的成因）。
+                            val rawSrc = node.attr("src").ifBlank { node.attr("xlink:href") }
+                            if (rawSrc.isNotBlank()) {
                                 sb.appendLine()
-                                sb.append("[IMG:$savedPath]")
+                                sb.append("[IMG-UNRESOLVED:$rawSrc]")
                                 sb.appendLine()
                             }
                         }
                         tag == "p" || tag == "div" -> {
-                            val inner = htmlToFormattedText(node, imageHrefs).trim()
+                            val inner = htmlToFormattedTextForProjection(node, imageHrefs, baseDir).trim()
                             if (inner.isNotBlank()) {
                                 sb.appendLine(inner)
                                 sb.appendLine()
                             }
                         }
                         tag == "span" || tag == "a" || tag == "li" -> {
-                            sb.append(htmlToFormattedText(node, imageHrefs))
+                            sb.append(htmlToFormattedTextForProjection(node, imageHrefs, baseDir))
                         }
                         tag == "ul" || tag == "ol" -> {
                             sb.appendLine()
-                            sb.append(htmlToFormattedText(node, imageHrefs))
+                            sb.append(htmlToFormattedTextForProjection(node, imageHrefs, baseDir))
                             sb.appendLine()
                         }
                         else -> {
-                            sb.append(htmlToFormattedText(node, imageHrefs))
+                            sb.append(htmlToFormattedTextForProjection(node, imageHrefs, baseDir))
                         }
                     }
                 }
@@ -504,48 +576,71 @@ class BookParser @Inject constructor(
         }
         return sb.toString()
     }
-
-    private fun parseTxtStream(inputStream: InputStream, fileName: String, fileSize: Long): Result<BookParseResult> {
+    private suspend fun parseTxtStream(inputStream: InputStream, fileName: String, fileSize: Long): Result<BookParseResult> {
         return try {
-            val text = inputStream.readCappedTextNotNull(maxWholeFileBytes)
+            val rules = runCatching { settingsRepository.appSettings.first().txtProcessing }
+                .getOrDefault(TxtProcessingRules())
+            val rawText = inputStream.readCappedTextNotNull(maxWholeFileBytes)
+            val text = if (rules.hasAnyCleaning) TxtCleaner.clean(rawText, rules) else TxtCleaner.normalize(rawText)
 
-            val title = fileName.removeSuffix(".txt")
+            val title = fileName.removeSuffix(".txt").removeSuffix(".TXT")
             val chapters = mutableListOf<Chapter>()
 
             val lines = text.lines()
-            val chapterPattern = Regex("^(第[一二三四五六七八九十\\d]+[章节卷部分篇]|#|Chapter|CHAPTER)\\s*.*")
+            val author = TxtChapterDetector.extractAuthor(lines) ?: "未知作者"
+            val patterns = TxtChapterDetector.selectBestPatterns(lines)
+            val customPatterns = TxtCleaner.compileChapterRegex(rules.customChapterRegex)
+                ?.let { listOf(it) }
+                .orEmpty()
+            // When the user insists on their own regex, the built-in tiers are skipped so a book
+            // whose headings the heuristics misread can be re-split deterministically.
+            val activePatterns = if (rules.customRegexOnly && customPatterns.isNotEmpty()) emptyList() else patterns
 
+            var currentVolume: String? = null
             var currentChapterTitle = "前言"
             var currentContent = StringBuilder()
             var chapterIndex = 0
 
-            for (line in lines) {
-                val trimmedLine = line.trim()
-                if (chapterPattern.containsMatchIn(trimmedLine) && trimmedLine.length < 100) {
-                    if (currentContent.isNotBlank()) {
-                        chapterIndex = appendChunkedChapter(
-                            chapters = chapters,
-                            title = currentChapterTitle,
-                            content = currentContent.toString().trim(),
-                            startPosition = 0,
-                            startIndex = chapterIndex
-                        )
+            if (activePatterns.isNotEmpty() || customPatterns.isNotEmpty()) {
+                for (line in lines) {
+                    val match = TxtChapterDetector.matchHeading(line, activePatterns, customPatterns)
+                    if (match.isHeading) {
+                        // Flush whatever is pending before the heading changes the context.
+                        if (currentContent.isNotBlank()) {
+                            chapterIndex = appendChunkedChapter(
+                                chapters = chapters,
+                                title = currentChapterTitle,
+                                content = currentContent.toString().trim(),
+                                startPosition = 0,
+                                startIndex = chapterIndex,
+                                volume = currentVolume
+                            )
+                        }
+                        currentContent = StringBuilder()
+                        if (match.isVolume) {
+                            // A volume heading is a group label: record it so subsequent chapters
+                            // carry this volume. Any text between this volume heading and the first
+                            // chapter is the volume's preface (卷序).
+                            currentVolume = match.title
+                            currentChapterTitle = "卷序"
+                        } else {
+                            currentChapterTitle = match.title
+                        }
+                    } else {
+                        currentContent.appendLine(line)
                     }
-                    currentChapterTitle = trimmedLine
-                    currentContent = StringBuilder()
-                } else {
-                    currentContent.appendLine(line)
                 }
-            }
 
-            if (currentContent.isNotBlank()) {
-                appendChunkedChapter(
-                    chapters = chapters,
-                    title = currentChapterTitle,
-                    content = currentContent.toString().trim(),
-                    startPosition = 0,
-                    startIndex = chapterIndex
-                )
+                if (currentContent.isNotBlank()) {
+                    appendChunkedChapter(
+                        chapters = chapters,
+                        title = currentChapterTitle,
+                        content = currentContent.toString().trim(),
+                        startPosition = 0,
+                        startIndex = chapterIndex,
+                        volume = currentVolume
+                    )
+                }
             }
 
             if (chapters.isEmpty()) {
@@ -561,7 +656,7 @@ class BookParser @Inject constructor(
                 BookParseResult(
                     book = Book(
                         title = title,
-                        author = "未知作者",
+                        author = author,
                         filePath = "",
                         fileSize = fileSize,
                         format = BookFormat.TXT,
@@ -617,18 +712,19 @@ class BookParser @Inject constructor(
         }
     }
 
-    private fun parsePdfStream(uri: Uri, fileName: String, fileSize: Long): Result<BookParseResult> {
+    private fun parsePdfStream(uri: Uri, fileName: String, fileSize: Long, localCopyPath: String? = null): Result<BookParseResult> {
         return try {
-            val internalPath = copyFileToInternal(uri)
+            val internalPath = localCopyPath ?: copyFileToInternal(uri)
                 ?: return Result.failure(Exception("无法保存PDF文件"))
 
-            val pageCount = context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+            val pageCount = ParcelFileDescriptor.open(File(internalPath), ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                 PdfRenderer(pfd).use { renderer ->
                     renderer.pageCount
                 }
-            } ?: 0
+            }
+            require(pageCount > 0) { "PDF 没有可阅读的页面" }
 
-            val title = fileName.removeSuffix(".pdf")
+            val title = fileName.substringBeforeLast('.')
 
             val chapters = (0 until pageCount).map { pageIndex ->
                 Chapter(
@@ -832,7 +928,8 @@ class BookParser @Inject constructor(
         title: String,
         content: String,
         startPosition: Int,
-        startIndex: Int = chapters.size
+        startIndex: Int = chapters.size,
+        volume: String? = null
     ): Int {
         if (content.isBlank()) return startIndex
 
@@ -856,7 +953,11 @@ class BookParser @Inject constructor(
                         title = if (offset == 0 && splitEnd >= trimmedContent.length) title else "$title ($partNumber)",
                         content = chunk,
                         startPosition = startPosition + offset,
-                        endPosition = startPosition + splitEnd
+                        endPosition = startPosition + splitEnd,
+                        // F08：本函数一直接收 `volume`，却在构造 Chapter 时没传下去，卷信息在
+                        // 这一行被静默丢弃，导致目录里所有分卷都退化成扁平章。计划 4.4 要求
+                        // 卷信息必须随章节落到持久层。
+                        volume = volume
                     )
                 )
                 nextIndex++
@@ -924,7 +1025,7 @@ class BookParser @Inject constructor(
                 val fallbackTitle = fileName.substringBeforeLast('.')
                 val document = Jsoup.parse(book.html)
                 document.select("script, style").remove()
-                val text = htmlToFormattedText(document.body(), emptyMap()).trim()
+                val text = htmlToFormattedTextForProjection(document.body(), emptyMap()).trim()
 
                 val chapters = mutableListOf<Chapter>()
                 appendChunkedChapter(

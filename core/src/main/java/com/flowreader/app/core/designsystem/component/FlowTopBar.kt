@@ -2,8 +2,8 @@ package com.flowreader.app.core.designsystem.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.flowreader.app.core.designsystem.theme.FlowTheme
 import com.flowreader.core.R
 
@@ -34,6 +35,7 @@ fun FlowTopBar(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    primaryPage: Boolean = false,
     onNavigateUp: (() -> Unit)? = null,
     navigateUpDescription: String? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
@@ -45,7 +47,12 @@ fun FlowTopBar(
         modifier = modifier,
         title = {
             Column {
-                Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = title,
+                    style = if (primaryPage) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
@@ -60,7 +67,7 @@ fun FlowTopBar(
         navigationIcon = {
             if (onNavigateUp != null) {
                 IconButton(onClick = onNavigateUp) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = upDescription)
+                    Icon(FlowIcons.Back, contentDescription = upDescription, modifier = Modifier.size(20.dp))
                 }
             }
         },

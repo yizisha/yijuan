@@ -3,6 +3,7 @@ package com.flowreader.app.data.repository
 import com.flowreader.app.data.local.dao.BookmarkDao
 import com.flowreader.app.data.local.entity.BookmarkEntity
 import com.flowreader.app.domain.model.Bookmark
+import com.flowreader.app.domain.model.ResolutionQuality
 import com.flowreader.app.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -39,7 +40,14 @@ class BookmarkRepositoryImpl @Inject constructor(
             bookId = requirePositive(bookmark.bookId, "Book id"),
             chapterIndex = bookmark.chapterIndex.coerceAtLeast(0),
             position = bookmark.position.coerceAtLeast(0),
-            text = normalizeText(bookmark.text)
+            text = normalizeText(bookmark.text),
+            // 内容坐标质量由 locator 是否存在唯一决定：没有 locator 就不能声称 EXACT。
+            // 旧 position 的单位证据原样保留，绝不因为「看起来像字符偏移」就升级为 UTF16。
+            locatorQuality = if (bookmark.locator == null) {
+                ResolutionQuality.UNRESOLVED
+            } else {
+                bookmark.locatorQuality
+            }
         )
         val id = bookmarkDao.insertBookmark(BookmarkEntity.fromDomain(normalized))
         return normalized.copy(id = id)

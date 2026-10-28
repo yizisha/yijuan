@@ -13,11 +13,11 @@ class PageModeTest {
     }
 
     @Test
-    fun retiredModesFallBackToSlideInsteadOfCrashing() {
-        assertEquals(PageMode.SLIDE, PageMode.fromStoredName("SIMULATION"))
-        assertEquals(PageMode.SLIDE, PageMode.fromStoredName("CURL"))
-        assertEquals(PageMode.SLIDE, PageMode.fromStoredName("SLIDE_OVER"))
-        assertEquals(PageMode.SLIDE, PageMode.fromStoredName(null))
+    fun retiredModesFallBackToDefaultInsteadOfCrashing() {
+        assertEquals(PageMode.PAGED, PageMode.fromStoredName("SIMULATION"))
+        assertEquals(PageMode.PAGED, PageMode.fromStoredName("CURL"))
+        assertEquals(PageMode.PAGED, PageMode.fromStoredName("SLIDE_OVER"))
+        assertEquals(PageMode.PAGED, PageMode.fromStoredName(null))
     }
 
     @Test

@@ -1,0 +1,245 @@
+Invalidating hierarchy because watch probe hasn't been triggered R:\
+
+> Configure project :app
+WARNING: The option setting 'android.overridePathCheck=true' is experimental.
+The current default is 'false'.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :core:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :core:preDebugBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:writeDebugAarMetadata UP-TO-DATE
+> Task :data:preBuild UP-TO-DATE
+> Task :data:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :data:writeDebugAarMetadata UP-TO-DATE
+> Task :domain:preBuild UP-TO-DATE
+> Task :domain:preDebugBuild UP-TO-DATE
+> Task :plugin-api:preBuild UP-TO-DATE
+> Task :plugin-api:preDebugBuild UP-TO-DATE
+> Task :domain:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:library:preBuild UP-TO-DATE
+> Task :feature:library:preDebugBuild UP-TO-DATE
+> Task :feature:library:writeDebugAarMetadata UP-TO-DATE
+> Task :plugin-api:writeDebugAarMetadata UP-TO-DATE
+> Task :plugin:tts:preBuild UP-TO-DATE
+> Task :feature:reader:preBuild UP-TO-DATE
+> Task :feature:reader:preDebugBuild UP-TO-DATE
+> Task :plugin:tts:preDebugBuild UP-TO-DATE
+> Task :feature:reader:writeDebugAarMetadata UP-TO-DATE
+> Task :plugin:tts:writeDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :core:generateDebugResValues UP-TO-DATE
+> Task :core:generateDebugResources UP-TO-DATE
+> Task :core:packageDebugResources UP-TO-DATE
+> Task :data:generateDebugResValues UP-TO-DATE
+> Task :data:generateDebugResources UP-TO-DATE
+> Task :data:packageDebugResources UP-TO-DATE
+> Task :domain:generateDebugResValues UP-TO-DATE
+> Task :domain:generateDebugResources UP-TO-DATE
+> Task :domain:packageDebugResources UP-TO-DATE
+> Task :plugin-api:generateDebugResValues UP-TO-DATE
+> Task :plugin-api:generateDebugResources UP-TO-DATE
+> Task :plugin-api:packageDebugResources UP-TO-DATE
+> Task :feature:library:generateDebugResValues UP-TO-DATE
+> Task :feature:library:generateDebugResources UP-TO-DATE
+> Task :feature:library:packageDebugResources UP-TO-DATE
+> Task :feature:reader:generateDebugResValues UP-TO-DATE
+> Task :feature:reader:generateDebugResources UP-TO-DATE
+> Task :feature:reader:packageDebugResources UP-TO-DATE
+> Task :plugin:tts:generateDebugResValues UP-TO-DATE
+> Task :plugin:tts:generateDebugResources UP-TO-DATE
+> Task :plugin:tts:packageDebugResources UP-TO-DATE
+> Task :core:extractDeepLinksDebug UP-TO-DATE
+> Task :core:processDebugManifest UP-TO-DATE
+> Task :data:extractDeepLinksDebug UP-TO-DATE
+> Task :data:processDebugManifest UP-TO-DATE
+> Task :domain:extractDeepLinksDebug UP-TO-DATE
+> Task :domain:processDebugManifest UP-TO-DATE
+> Task :plugin-api:extractDeepLinksDebug UP-TO-DATE
+> Task :plugin-api:processDebugManifest UP-TO-DATE
+> Task :feature:library:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:library:processDebugManifest UP-TO-DATE
+> Task :feature:reader:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:reader:processDebugManifest UP-TO-DATE
+> Task :plugin:tts:extractDeepLinksDebug UP-TO-DATE
+> Task :plugin:tts:processDebugManifest UP-TO-DATE
+> Task :core:compileDebugLibraryResources UP-TO-DATE
+> Task :core:parseDebugLocalResources UP-TO-DATE
+> Task :core:generateDebugRFile UP-TO-DATE
+> Task :data:compileDebugLibraryResources UP-TO-DATE
+> Task :data:parseDebugLocalResources UP-TO-DATE
+> Task :data:generateDebugRFile UP-TO-DATE
+> Task :domain:compileDebugLibraryResources UP-TO-DATE
+> Task :domain:parseDebugLocalResources UP-TO-DATE
+> Task :domain:generateDebugRFile UP-TO-DATE
+> Task :plugin-api:compileDebugLibraryResources UP-TO-DATE
+> Task :plugin-api:parseDebugLocalResources UP-TO-DATE
+> Task :plugin-api:generateDebugRFile UP-TO-DATE
+> Task :feature:library:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:library:parseDebugLocalResources UP-TO-DATE
+> Task :feature:library:generateDebugRFile UP-TO-DATE
+> Task :feature:reader:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:reader:parseDebugLocalResources UP-TO-DATE
+> Task :feature:reader:generateDebugRFile UP-TO-DATE
+> Task :plugin:tts:compileDebugLibraryResources UP-TO-DATE
+> Task :plugin:tts:parseDebugLocalResources UP-TO-DATE
+> Task :plugin:tts:generateDebugRFile UP-TO-DATE
+> Task :core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:compileDebugKotlin UP-TO-DATE
+> Task :domain:javaPreCompileDebug UP-TO-DATE
+> Task :domain:compileDebugJavaWithJavac NO-SOURCE
+> Task :domain:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :core:compileDebugKotlin UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:javaPreCompileDebug UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :core:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :data:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :data:kspDebugKotlin UP-TO-DATE
+> Task :plugin-api:javaPreCompileDebug UP-TO-DATE
+> Task :plugin-api:compileDebugJavaWithJavac UP-TO-DATE
+> Task :plugin-api:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:library:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:library:compileDebugKotlin NO-SOURCE
+> Task :feature:library:javaPreCompileDebug UP-TO-DATE
+> Task :feature:library:compileDebugJavaWithJavac NO-SOURCE
+> Task :data:compileDebugKotlin UP-TO-DATE
+> Task :feature:library:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:reader:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :data:javaPreCompileDebug UP-TO-DATE
+> Task :data:compileDebugJavaWithJavac UP-TO-DATE
+> Task :data:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :plugin:tts:javaPreCompileDebug UP-TO-DATE
+> Task :plugin:tts:compileDebugJavaWithJavac UP-TO-DATE
+> Task :plugin:tts:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :data:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:library:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :domain:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :plugin:tts:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :plugin-api:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:reader:compileDebugKotlin UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :feature:reader:javaPreCompileDebug UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :core:mergeDebugShaders UP-TO-DATE
+> Task :feature:reader:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:compileDebugShaders NO-SOURCE
+> Task :core:generateDebugAssets UP-TO-DATE
+> Task :feature:reader:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:packageDebugAssets UP-TO-DATE
+> Task :feature:reader:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :data:mergeDebugShaders UP-TO-DATE
+> Task :data:compileDebugShaders NO-SOURCE
+> Task :data:generateDebugAssets UP-TO-DATE
+> Task :data:packageDebugAssets UP-TO-DATE
+> Task :domain:mergeDebugShaders UP-TO-DATE
+> Task :domain:compileDebugShaders NO-SOURCE
+> Task :domain:generateDebugAssets UP-TO-DATE
+> Task :domain:packageDebugAssets UP-TO-DATE
+> Task :plugin-api:mergeDebugShaders UP-TO-DATE
+> Task :plugin-api:compileDebugShaders NO-SOURCE
+> Task :plugin-api:generateDebugAssets UP-TO-DATE
+> Task :plugin-api:packageDebugAssets UP-TO-DATE
+> Task :feature:library:mergeDebugShaders UP-TO-DATE
+> Task :feature:library:compileDebugShaders NO-SOURCE
+> Task :feature:library:generateDebugAssets UP-TO-DATE
+> Task :feature:library:packageDebugAssets UP-TO-DATE
+> Task :feature:reader:mergeDebugShaders UP-TO-DATE
+> Task :feature:reader:compileDebugShaders NO-SOURCE
+> Task :feature:reader:generateDebugAssets UP-TO-DATE
+> Task :feature:reader:packageDebugAssets UP-TO-DATE
+> Task :plugin:tts:mergeDebugShaders UP-TO-DATE
+> Task :plugin:tts:compileDebugShaders NO-SOURCE
+> Task :plugin:tts:generateDebugAssets UP-TO-DATE
+> Task :plugin:tts:packageDebugAssets UP-TO-DATE
+> Task :core:processDebugJavaRes UP-TO-DATE
+> Task :data:processDebugJavaRes UP-TO-DATE
+> Task :domain:processDebugJavaRes UP-TO-DATE
+> Task :plugin-api:processDebugJavaRes NO-SOURCE
+> Task :feature:library:processDebugJavaRes NO-SOURCE
+> Task :feature:reader:processDebugJavaRes UP-TO-DATE
+> Task :plugin:tts:processDebugJavaRes NO-SOURCE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug UP-TO-DATE
+> Task :app:transformDebugClassesWithAsm UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :app:generateDebugUnitTestConfig UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin
+w: file:///R:/app/src/test/java/com/flowreader/app/data/ContentEngineMigration9To10Test.kt:166:68 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/test/java/com/flowreader/app/data/ContentEngineMigration9To10Test.kt:173:36 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/test/java/com/flowreader/app/data/FavoritePersistenceTest.kt:74:34 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/test/java/com/flowreader/app/data/ReadingStatsRestartTest.kt:50:43 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/test/java/com/flowreader/app/data/repository/CompleteBackupTest.kt:225:32 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/test/java/com/flowreader/app/data/repository/SearchRepositoryDatabaseTest.kt:68:21 Type argument for reified type parameter 'T' was inferred to the intersection of ['kotlin.Comparable<*>' & 'java.io.Serializable']. Reification of an intersection type results in the common supertype being used. This may lead to subtle issues and an explicit type argument is encouraged. This will become an error in a future release.
+w: file:///R:/app/src/test/java/com/flowreader/app/ui/ReadingRoomVisualTest.kt:1081:41 'fun <T : Parcelable!> getParcelableExtra(p0: String!): T?' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/AutomaticBackupTest.kt:127:44 'fun <T : Parcelable!> getParcelable(p0: String?): T?' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/BookFileLocationStoreTest.kt:76:81 'fun <T : Parcelable!> getParcelableExtra(p0: String!): T?' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/BookFileLocationStoreTest.kt:78:52 'fun <T : Parcelable!> getParcelableExtra(p0: String!): T?' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/CacheManagerTest.kt:78:59 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/CacheManagerTest.kt:120:59 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/CacheManagerTest.kt:138:59 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/test/java/com/flowreader/app/util/epub/PublicationMarksTest.kt:124:51 Java type mismatch: inferred type is 'kotlin.String?', but 'kotlin.String' was expected.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:hiltAggregateDepsDebugUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileDebugUnitTest NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:transformDebugUnitTestClassesWithAsm
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :app:testDebugUnitTest
+
+ReaderNavigationTest > explicitJumpCannotBeReversedBeforeItsFirstPageIsAcknowledged FAILED
+    java.lang.AssertionError at ReaderNavigationTest.kt:480
+
+
+1 test completed, 1 failed
+> Task :app:testDebugUnitTest FAILED
+> Task :app:finalizeTestRoborazziDebug SKIPPED
+
+
+[Incubating] Problems report is available at: file:///R:/build/reports/problems/problems-report.html
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///R:/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1m 3s
+145 actionable tasks: 4 executed, 141 up-to-date

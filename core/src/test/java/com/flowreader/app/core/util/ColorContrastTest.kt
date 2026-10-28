@@ -63,4 +63,32 @@ class ColorContrastTest {
             assertTrue("contrast $ratio below AA for $foreground on $background", ratio >= ColorContrast.AA_BODY_TEXT)
         }
     }
+
+    @Test
+    fun monochromeSchemeBodyTextMeetsAa() {
+        val lightPairs = listOf(
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightOnSurface) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightSurface),
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightOnPrimary) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightPrimary),
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightOnSurfaceVariant) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightSurfaceVariant),
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightOnError) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.LightError)
+        )
+        val darkPairs = listOf(
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkOnSurface) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkSurface),
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkOnPrimary) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkPrimary),
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkOnSurfaceVariant) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkSurfaceVariant),
+            argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkOnError) to
+                argb(com.flowreader.app.core.designsystem.token.FlowMonochromeColors.DarkError)
+        )
+        (lightPairs + darkPairs).forEach { (foreground, background) ->
+            val ratio = ColorContrast.ratio(foreground, background)
+            assertTrue("contrast $ratio below AA for $foreground on $background", ratio >= ColorContrast.AA_BODY_TEXT)
+        }
+    }
 }

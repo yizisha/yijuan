@@ -1,0 +1,28 @@
+{
+  "version": "0.3.13",
+  "versionCode": 5710,
+  "package": "com.flowreader.app",
+  "abi": "arm64-v8a",
+  "release": true,
+  "bytes": 30788393,
+  "mib": 29.3621,
+  "previousBytes": 30787901,
+  "deltaBytes": 492,
+  "sha256": "405139E9414042660D109819B0648FC2B0EB6FA4E79D852861FFD46414683EDE",
+  "certificateSha256": "d55bcc2deb89662a230f71e74663027e878a47b21cfada81ecb6a2f68de217da",
+  "nativeLibrariesUnchanged": {
+    "lib/arm64-v8a/libandroidx.graphics.path.so": "41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6",
+    "lib/arm64-v8a/libdatastore_shared_counter.so": "d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1",
+    "lib/arm64-v8a/libonnxruntime.so": "33847ad43bffe204699fd4a27f7f3603452a8cdaf2f9a44983a0bc31ffcf2da1",
+    "lib/arm64-v8a/libsherpa-onnx-c-api.so": "c85e2382e2ca12b0513826be926eaccfea896b4cbf568182e287671ba526f80d",
+    "lib/arm64-v8a/libsherpa-onnx-cxx-api.so": "5eabb2bcf5a8af66aeab37431c09fab4a9c65cdebf02bd7e50f8c589044bd70e",
+    "lib/arm64-v8a/libsherpa-onnx-jni.so": "3c6492ea91ea68fd3b72b9495efdde6dd913f6b58c387e3b07389cf335f4d26f"
+  },
+  "noBundledOnnxModel": true,
+  "sameMainSourcesAsNativeProbe": false,
+  "apk": "01_最新安装包_APK/一卷-v0.3.13-arm64.apk",
+  "realPhoneVerified": false,
+  "unitTests": 42,
+  "nativeProbeVariant": null,
+  "realBookRecheck": "Pending: device disconnected; 0.3.12 real-book failure retained"
+}

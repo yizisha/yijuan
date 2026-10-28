@@ -7,6 +7,80 @@ import org.junit.Test
 
 class ReaderSessionTrackerTest {
 
+    @Test fun unstartedTrackerNeverCountsEpochTime() {
+        val tracker = freshTracker()
+        assertEquals(0L, tracker.takeSnapshotAndReset().second)
+    }
+
+    @Test fun aVisibleStationaryReaderKeepsCountingAcrossPeriodicSaves() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        var seconds = 0L
+        repeat(120) {
+            tick(30_000)
+            seconds += tracker.takeSnapshotAndReset().second
+        }
+        assertEquals(3600L, seconds)
+    }
+
+    @Test fun snapshotKeepsTheCurrentPageCoordinate() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        tracker.recordPageProgress(90, 900)
+        tracker.takeSnapshotAndReset()
+        tick(1000)
+        assertEquals(1, tracker.recordPageProgress(91, 900))
+    }
+
+    @Test fun idleInteractionDoesNotDiscardTheUnflushedReadingTime() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        tick(301_000)
+        assertTrue(tracker.recordInteraction(1))
+        assertEquals(301L, tracker.takeSnapshotAndReset().second)
+    }
+
+    @Test fun backgroundTimeIsExcludedAndResumeStartsANewActiveInterval() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        tick(12_000)
+        tracker.setActive(false)
+        tick(86 * 60 * 60 * 1000L)
+        assertEquals(12L, tracker.takeSnapshotAndReset().second)
+        tracker.setActive(true)
+        tick(8_000)
+        assertEquals(8L, tracker.takeSnapshotAndReset().second)
+    }
+
+    @Test fun subSecondSavesKeepTheirRemainder() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        tick(600)
+        assertEquals(0L, tracker.takeSnapshotAndReset().second)
+        tick(600)
+        assertEquals(1L, tracker.takeSnapshotAndReset().second)
+    }
+
+    @Test
+    fun forwardChapterBoundaryCountsOnePageWithANewCoordinateOrigin() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        tracker.rebasePosition(-1)
+        assertEquals(1, tracker.recordPageProgress(0, 900))
+        assertEquals(1, tracker.readPages)
+    }
+
+    @Test
+    fun reverseChapterBoundaryDoesNotCountThePreviousChaptersPageNumberAsReading() {
+        val tracker = freshTracker()
+        tracker.startSession()
+        tracker.rebasePosition(28)
+        assertEquals(0, tracker.recordPageProgress(28, 900))
+        assertEquals(0, tracker.readPages)
+        tick(1_000L)
+        assertEquals(1, tracker.recordPageProgress(29, 900))
+    }
+
     private var now = 1_000_000L
 
     private fun freshTracker(): ReaderSessionTracker {

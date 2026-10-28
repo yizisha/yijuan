@@ -3,15 +3,20 @@ package com.flowreader.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.IntentCompat
+import androidx.fragment.app.FragmentActivity
 import com.flowreader.app.ui.FlowReaderRoot
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * `FragmentActivity` rather than plain `ComponentActivity`: `BiometricPrompt` (used by the app
+ * lock) only accepts a `FragmentActivity`, and it is a superset of what the Compose entry point
+ * needs.
+ */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     /**
      * URI handed in by another app ("open with FlowReader"). Consumed once so a configuration
@@ -29,6 +34,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             FlowReaderRoot(initialImportUri = pendingImportUri)
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (com.flowreader.app.util.VolumeKeyHandler.handleVolumeDown()) return true
+        } else if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP) {
+            if (com.flowreader.app.util.VolumeKeyHandler.handleVolumeUp()) return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun resolveImportUri(intent: Intent?): Uri? {

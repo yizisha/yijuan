@@ -4,10 +4,13 @@ import com.flowreader.app.data.local.dao.BookDao
 import com.flowreader.app.data.local.entity.BookEntity
 import com.flowreader.app.domain.model.Book
 import com.flowreader.app.domain.repository.BookRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.conflate
 
 @Singleton
 class BookRepositoryImpl @Inject constructor(
@@ -17,7 +20,7 @@ class BookRepositoryImpl @Inject constructor(
     override fun getAllBooks(): Flow<List<Book>> {
         return bookDao.getAllBooks().map { entities ->
             entities.map { it.toDomain() }
-        }
+        }.flowOn(Dispatchers.Default).conflate()
     }
 
     override suspend fun getBooksPaged(offset: Int, limit: Int): List<Book> {
@@ -31,25 +34,25 @@ class BookRepositoryImpl @Inject constructor(
     override fun getBooksByCategory(categoryId: Long): Flow<List<Book>> {
         return bookDao.getBooksByCategory(categoryId).map { entities ->
             entities.map { it.toDomain() }
-        }
+        }.flowOn(Dispatchers.Default).conflate()
     }
 
     override fun getRecentlyReadBooks(limit: Int): Flow<List<Book>> {
         return bookDao.getRecentlyReadBooks(limit).map { entities ->
             entities.map { it.toDomain() }
-        }
+        }.flowOn(Dispatchers.Default).conflate()
     }
 
     override fun searchBooks(query: String): Flow<List<Book>> {
         return bookDao.searchBooks(query).map { entities ->
             entities.map { it.toDomain() }
-        }
+        }.flowOn(Dispatchers.Default).conflate()
     }
 
     override fun getBooksByTag(tag: String): Flow<List<Book>> {
         return bookDao.getBooksByTag(tag).map { entities ->
             entities.map { it.toDomain() }
-        }
+        }.flowOn(Dispatchers.Default).conflate()
     }
 
     override suspend fun getBookById(id: Long): Book? {
@@ -65,7 +68,24 @@ class BookRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateBook(book: Book) {
-        bookDao.updateBook(BookEntity.fromDomain(book))
+        bookDao.updateBookPreservingFavorite(BookEntity.fromDomain(book))
+    }
+
+    override suspend fun setFavorite(bookId: Long, isFavorite: Boolean) {
+        check(bookDao.setFavorite(bookId, isFavorite) == 1) { "书籍不存在，无法更新收藏" }
+    }
+
+    override suspend fun setBooksSeries(bookIds: List<Long>, seriesName: String?) {
+        val name = seriesName?.let { com.flowreader.app.domain.model.BookSeries.requireName(it) }
+        bookDao.assignSeries(bookIds.filter { it > 0 }.distinct(), name)
+    }
+
+    override suspend fun reorderSeries(seriesName: String, bookIds: List<Long>) {
+        bookDao.reorderSeries(com.flowreader.app.domain.model.BookSeries.requireName(seriesName), bookIds)
+    }
+
+    override suspend fun renameSeries(seriesName: String, newName: String) {
+        bookDao.renameSeries(seriesName, com.flowreader.app.domain.model.BookSeries.requireName(newName))
     }
 
     override suspend fun deleteBook(book: Book) {

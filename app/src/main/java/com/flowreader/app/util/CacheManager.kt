@@ -73,7 +73,12 @@ class CacheManager @Inject constructor(
     companion object {
         private const val MAX_COVERS = 20
         private const val CACHE_EXPIRY_MS = 30 * 60 * 1000L
-        private const val MIN_CHAPTERS_PER_BOOK = 2
+        /**
+         * Must stay at or above the reader's preload window (both neighbours, plus the chapter
+         * being read): a 2-chapter cache evicted the very chapters that had just been prefetched,
+         * so every arrow tap went back to the database.
+         */
+        private const val MIN_CHAPTERS_PER_BOOK = 4
         private const val MAX_CHAPTERS_PER_BOOK = 12
         private const val ADAPT_WINDOW = 50
         private const val ADAPT_GROW_HIT_RATE = 0.6f

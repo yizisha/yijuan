@@ -2,6 +2,7 @@ package com.flowreader.app.data.repository
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import com.flowreader.app.data.local.AppDatabase
 import com.flowreader.app.data.local.dao.AnnotationDao
 import com.flowreader.app.data.local.dao.BookDao
@@ -13,22 +14,16 @@ import com.flowreader.app.data.local.entity.AnnotationEntity
 import com.flowreader.app.data.local.entity.BookEntity
 import com.flowreader.app.data.local.entity.BookmarkEntity
 import com.flowreader.app.data.local.entity.CategoryEntity
-import com.flowreader.app.data.local.entity.ChapterEntity
-import com.flowreader.app.data.local.entity.ReadingStatsEntity
 import com.flowreader.app.domain.repository.BackupRepository
 import com.flowreader.app.domain.repository.ImportResult
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
-import androidx.room.withTransaction
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 @Singleton
 class BackupRepositoryImpl @Inject constructor(
@@ -41,130 +36,136 @@ class BackupRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val readingStatsDao: ReadingStatsDao
 ) : BackupRepository {
-    override suspend fun exportData(uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+    private val archive = BackupArchive(context, database)
+    private val operation = kotlinx.coroutines.sync.Mutex()
+
+    private suspend fun <T> safely(block: suspend () -> T): Result<T> = withContext(Dispatchers.IO) {
+        operation.lock()
         try {
-            val json = buildBackupJson()
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                OutputStreamWriter(outputStream).use { writer ->
-                    writer.write(json)
+            Result.success(block())
+        } catch (error: Exception) {
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            Result.failure(error)
+        } finally {
+            operation.unlock()
+        }
+    }
+
+    override suspend fun exportData(uri: Uri): Result<Unit> = safely {
+        val temporary = java.io.File(context.cacheDir, "manual-backup-${java.util.UUID.randomUUID()}.zip")
+        try {
+            temporary.outputStream().use { archive.export(it) }
+            val expected = BackupArchive.digest(temporary)
+            val output = context.contentResolver.openOutputStream(uri, "wt") ?: error("无法创建备份文件")
+            temporary.inputStream().use { input ->
+                output.use { out ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        out.write(buffer, 0, count)
+                    }
                 }
             }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+            val hash = java.security.MessageDigest.getInstance("SHA-256")
+            val input = context.contentResolver.openInputStream(uri) ?: error("文件已写入，但无法回读校验")
+            input.use { stream ->
+                val buffer = ByteArray(64 * 1024)
+                var total = 0L
+                while (true) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= BackupArchive.MAX_BYTES)
+                    hash.update(buffer, 0, count)
+                }
+            }
+            require(hash.digest().joinToString("") { "%02x".format(it) } == expected) { "备份文件回读校验失败" }
+        } finally {
+            temporary.delete()
         }
     }
 
-    override suspend fun exportDataToFile(file: java.io.File): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun exportDataToFile(file: java.io.File): Result<Unit> = safely {
+        val temporary = java.io.File(file.parentFile, "${file.name}.partial-${java.util.UUID.randomUUID()}")
         try {
-            java.io.FileWriter(file).use { writer ->
-                writer.write(buildBackupJson())
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+            temporary.outputStream().use { archive.export(it) }
+            // 先完整写好再替换目标；失败时旧文件仍在。
+            java.nio.file.Files.move(temporary.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            Unit
+        } finally {
+            temporary.delete()
         }
     }
 
-    private suspend fun buildBackupJson(): String {
-        val json = JSONObject()
-        val books = bookDao.getAllBooks().first()
-        val booksArray = JSONArray()
-        books.forEach { book -> booksArray.put(book.toJson()) }
-        json.put("books", booksArray)
-
-        val categories = categoryDao.getAllCategories().first()
-        val categoriesArray = JSONArray()
-        categories.forEach { category -> categoriesArray.put(category.toJson()) }
-        json.put("categories", categoriesArray)
-
-        val allBookmarks = bookmarkDao.getAllBookmarks().first()
-        val bookmarksArray = JSONArray()
-        allBookmarks.forEach { bookmark -> bookmarksArray.put(bookmark.toJson()) }
-        json.put("bookmarks", bookmarksArray)
-
-        val allAnnotations = annotationDao.getAllAnnotations().first()
-        val annotationsArray = JSONArray()
-        allAnnotations.forEach { annotation -> annotationsArray.put(annotation.toJson()) }
-        json.put("annotations", annotationsArray)
-        return json.toString(2)
+    override suspend fun prepareImport(uri: Uri): Result<com.flowreader.app.domain.repository.BackupPreview> = safely {
+        val input = context.contentResolver.openInputStream(uri) ?: error("无法打开备份文件")
+        input.use { archive.prepare(it, ::prepareLegacy) }
     }
 
-    override suspend fun importData(uri: Uri): Result<ImportResult> = withContext(Dispatchers.IO) {
+    override suspend fun prepareImportFromFile(file: java.io.File): Result<com.flowreader.app.domain.repository.BackupPreview> = safely {
+        file.inputStream().use { archive.prepare(it, ::prepareLegacy) }
+    }
+
+    override suspend fun restorePrepared(
+        token: String,
+        mode: com.flowreader.app.domain.repository.RestoreMode,
+        restoreSettings: Boolean
+    ): Result<ImportResult> = safely { archive.restore(token, mode, restoreSettings) }
+
+    override suspend fun discardPrepared(token: String) {
+        safely { archive.discard(token) }
+    }
+
+    override suspend fun importData(uri: Uri): Result<ImportResult> {
+        val preview = prepareImport(uri).getOrElse { return Result.failure(it) }
+        return restorePrepared(preview.token, com.flowreader.app.domain.repository.RestoreMode.MERGE, false)
+            .also { if (it.isFailure) discardPrepared(preview.token) }
+    }
+
+    override suspend fun importDataFromFile(file: java.io.File): Result<ImportResult> {
+        val preview = prepareImportFromFile(file).getOrElse { return Result.failure(it) }
+        return restorePrepared(preview.token, com.flowreader.app.domain.repository.RestoreMode.MERGE, false)
+            .also { if (it.isFailure) discardPrepared(preview.token) }
+    }
+
+    private suspend fun prepareLegacy(stage: java.io.File, text: String) {
+        val json = JSONObject(text)
+        require(json.has("books") && json.get("books") is JSONArray) { "不是一卷备份 JSON（书架导出不能作为完整备份恢复）" }
+        val tempFile = java.io.File(stage, "legacy.db")
+        val temp = androidx.room.Room.databaseBuilder(context, AppDatabase::class.java, tempFile.absolutePath).build()
+        val warnings = mutableListOf("旧 JSON 只包含记录，不含正文、封面、完整定位或设置；缺失文件需要重新导入。")
         try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val text = readCapped(inputStream, MAX_BACKUP_BYTES)
-                    ?: return@use Result.failure(Exception("备份文件超过 ${MAX_BACKUP_BYTES / 1024 / 1024}MB 上限"))
-                val json = JSONObject(text)
-                applyBackupJson(json)
-            } ?: Result.failure(Exception("无法打开文件"))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun importDataFromFile(file: java.io.File): Result<ImportResult> = withContext(Dispatchers.IO) {
-        try {
-            if (!file.exists() || file.length() > MAX_BACKUP_BYTES) {
-                Result.failure(Exception("备份文件缺失或超过 ${MAX_BACKUP_BYTES / 1024 / 1024}MB 上限"))
-            } else {
-                val json = JSONObject(java.io.FileReader(file).readText())
-                applyBackupJson(json)
+            temp.withTransaction {
+                val categories = json.optJSONArray("categories") ?: JSONArray()
+                val categoryIds = mutableSetOf<Long>()
+                for (i in 0 until categories.length()) {
+                    val row = categories.getJSONObject(i)
+                    val id = row.getLong("id")
+                    temp.categoryDao().insertCategory(CategoryEntity(id, row.getString("name")))
+                    categoryIds += id
+                }
+                val books = json.getJSONArray("books")
+                for (i in 0 until books.length()) {
+                    val source = books.getJSONObject(i)
+                    val book = BookEntity.fromJson(source)
+                    temp.bookDao().insertBook(book.copy(categoryId = book.categoryId?.takeIf { it in categoryIds }))
+                    if (!java.io.File(book.filePath).isFile) warnings += "正文文件不可访问：${book.title}"
+                }
+                val bookmarks = json.optJSONArray("bookmarks") ?: JSONArray()
+                for (i in 0 until bookmarks.length()) temp.bookmarkDao().insertBookmark(BookmarkEntity.fromJson(bookmarks.getJSONObject(i)))
+                val annotations = json.optJSONArray("annotations") ?: JSONArray()
+                for (i in 0 until annotations.length()) temp.annotationDao().insertAnnotation(
+                    AnnotationEntity.fromJson(annotations.getJSONObject(i))
+                )
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+            archive.legacyManifest(stage, temp, warnings)
+        } finally {
+            temp.close()
+            listOf("", "-wal", "-shm", "-journal").forEach { java.io.File(tempFile.absolutePath + it).delete() }
         }
-    }
-
-    private fun readCapped(stream: java.io.InputStream, limit: Long): String? {
-        val output = java.io.ByteArrayOutputStream()
-        val buffer = ByteArray(8192)
-        var total = 0L
-        while (true) {
-            val read = stream.read(buffer)
-            if (read <= 0) break
-            total += read
-            if (total > limit) return null
-            output.write(buffer, 0, read)
-        }
-        return output.toString(Charsets.UTF_8)
-    }
-
-    private suspend fun applyBackupJson(json: JSONObject): Result<ImportResult> {
-        var booksImported = 0
-        var bookmarksImported = 0
-        var annotationsImported = 0
-
-        database.withTransaction {
-            val booksArray = json.optJSONArray("books") ?: JSONArray()
-            for (i in 0 until booksArray.length()) {
-                val bookJson = booksArray.getJSONObject(i)
-                val book = BookEntity.fromJson(bookJson)
-                bookDao.insertBook(book)
-                booksImported++
-            }
-
-            val bookmarksArray = json.optJSONArray("bookmarks") ?: JSONArray()
-            for (i in 0 until bookmarksArray.length()) {
-                val bookmarkJson = bookmarksArray.getJSONObject(i)
-                val bookmark = BookmarkEntity.fromJson(bookmarkJson)
-                bookmarkDao.insertBookmark(bookmark)
-                bookmarksImported++
-            }
-
-            val annotationsArray = json.optJSONArray("annotations") ?: JSONArray()
-            for (i in 0 until annotationsArray.length()) {
-                val annotationJson = annotationsArray.getJSONObject(i)
-                val annotation = AnnotationEntity.fromJson(annotationJson)
-                annotationDao.insertAnnotation(annotation)
-                annotationsImported++
-            }
-        }
-        return Result.success(ImportResult(booksImported, bookmarksImported, annotationsImported))
-    }
-
-    private companion object {
-        const val MAX_BACKUP_BYTES = 200L * 1024 * 1024
     }
 
     override suspend fun exportReadingProgress(bookId: Long): Result<String> = withContext(Dispatchers.IO) {
@@ -188,30 +189,15 @@ class BackupRepositoryImpl @Inject constructor(
     }
 }
 
-private fun BookEntity.toJson(): JSONObject = JSONObject().apply {
-    put("id", id)
-    put("title", title)
-    put("author", author)
-    put("filePath", filePath)
-    putOpt("coverPath", coverPath)
-    put("description", description)
-    put("fileSize", fileSize)
-    put("format", format)
-    put("totalChapters", totalChapters)
-    put("currentChapter", currentChapter)
-    put("currentPosition", currentPosition)
-    put("readingProgress", readingProgress)
-    putOpt("lastReadTime", lastReadTime)
-    put("addedTime", addedTime)
-    putOpt("categoryId", categoryId)
-}
-
 private fun BookEntity.Companion.fromJson(json: JSONObject): BookEntity = BookEntity(
     id = json.getLong("id"),
+    isFavorite = json.optBoolean("isFavorite", false),
+    seriesName = json.optString("seriesName").takeIf { it.isNotBlank() && it != "null" },
+    seriesOrder = json.optInt("seriesOrder", 0).coerceAtLeast(0),
     title = json.getString("title"),
     author = json.getString("author"),
     filePath = json.optString("filePath", ""),
-    coverPath = json.optString("coverPath"),
+    coverPath = json.optString("coverPath").takeIf { it.isNotBlank() && it != "null" },
     description = json.optString("description", ""),
     fileSize = json.optLong("fileSize", 0),
     format = json.optString("format", "TXT"),
@@ -219,24 +205,10 @@ private fun BookEntity.Companion.fromJson(json: JSONObject): BookEntity = BookEn
     currentChapter = json.optInt("currentChapter", 0),
     currentPosition = json.optInt("currentPosition", 0),
     readingProgress = json.optDouble("readingProgress", 0.0).toFloat(),
-    lastReadTime = json.optLong("lastReadTime"),
+    lastReadTime = if (json.has("lastReadTime") && !json.isNull("lastReadTime")) json.getLong("lastReadTime") else null,
     addedTime = json.optLong("addedTime", System.currentTimeMillis()),
     categoryId = if (json.has("categoryId") && !json.isNull("categoryId")) json.getLong("categoryId") else null
 )
-
-private fun CategoryEntity.toJson(): JSONObject = JSONObject().apply {
-    put("id", id)
-    put("name", name)
-}
-
-private fun BookmarkEntity.toJson(): JSONObject = JSONObject().apply {
-    put("id", id)
-    put("bookId", bookId)
-    put("chapterIndex", chapterIndex)
-    put("position", position)
-    put("text", text)
-    put("createdTime", createdTime)
-}
 
 private fun BookmarkEntity.Companion.fromJson(json: JSONObject): BookmarkEntity = BookmarkEntity(
     id = json.getLong("id"),
@@ -246,40 +218,6 @@ private fun BookmarkEntity.Companion.fromJson(json: JSONObject): BookmarkEntity 
     text = json.getString("text"),
     createdTime = json.optLong("createdTime", System.currentTimeMillis())
 )
-
-private fun ChapterEntity.toJson(): JSONObject = JSONObject().apply {
-    put("id", id)
-    put("bookId", bookId)
-    put("index", index)
-    put("title", title)
-    put("content", content)
-    put("startPosition", startPosition)
-    put("endPosition", endPosition)
-}
-
-private fun ChapterEntity.Companion.fromJson(json: JSONObject): ChapterEntity = ChapterEntity(
-    id = json.getLong("id"),
-    bookId = json.getLong("bookId"),
-    index = json.getInt("index"),
-    title = json.getString("title"),
-    content = json.optString("content", ""),
-    startPosition = json.optInt("startPosition", 0),
-    endPosition = json.optInt("endPosition", 0)
-)
-
-private fun AnnotationEntity.toJson(): JSONObject = JSONObject().apply {
-    put("id", id)
-    put("bookId", bookId)
-    put("chapterIndex", chapterIndex)
-    put("startPosition", startPosition)
-    put("endPosition", endPosition)
-    put("selectedText", selectedText)
-    put("note", note)
-    put("color", color)
-    put("type", type)
-    put("createdTime", createdTime)
-    put("modifiedTime", modifiedTime)
-}
 
 private fun AnnotationEntity.Companion.fromJson(json: JSONObject): AnnotationEntity = AnnotationEntity(
     id = json.getLong("id"),

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FlowReader</string>
+    <string name="app_name">一卷</string>
     <string name="widget_reading_progress_description">Progresso de leitura atual</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_confirm">OK</string>
@@ -26,7 +26,7 @@
     <string name="reader_bookmark_entry">Capítulo %1$d · posição %2$d</string>
     <string name="reader_bookmark_current"> · capítulo atual</string>
     <string name="reader_toggle_controls">Mostrar ou ocultar controles de leitura</string>
-    <string name="library_title">FlowReader</string>
+    <string name="library_title">一卷</string>
     <string name="library_search_placeholder">Pesquisar títulos, autores ou texto completo</string>
     <string name="library_search_exit">Sair da pesquisa</string>
     <string name="library_fulltext_hits">Resultados de texto completo (%1$d)</string>
@@ -101,7 +101,7 @@
     <string name="settings_restore">Restaurar dados</string>
     <string name="settings_restore_desc">Importar de um arquivo de backup</string>
     <string name="settings_section_about">Sobre</string>
-    <string name="settings_about">Sobre o FlowReader</string>
+    <string name="settings_about">Sobre o 一卷</string>
     <string name="settings_version">Versão %1$s</string>
     <string name="settings_about_desc">Um leitor de e-books offline</string>
     <string name="settings_about_thanks">Agradecimentos a estes projetos de código aberto:</string>
@@ -162,6 +162,7 @@
     <string name="search_title">Pesquisa global</string>
     <string name="search_section_books">Livros (%1$d)</string>
     <string name="search_section_chapters">Capítulos (%1$d)</string>
+    <string name="search_match_approximate">Localização aproximada</string>
     <string name="search_no_books">Nenhum livro corresponde ao título ou autor</string>
     <string name="search_load_more">Carregar mais resultados de capítulos</string>
     <string name="search_history_title">Histórico de pesquisa</string>
@@ -285,9 +286,15 @@
     <string name="reader_pdf_page">Página %1$d do PDF</string>
     <string name="reader_illustration">Ilustração</string>
     <string name="reader_illustration_missing">Ilustração ausente</string>
+    <string name="reader_illustration_failed">Não foi possível mostrar a imagem</string>
+    <string name="reader_illustration_alt">Imagem: %1$s</string>
+    <string name="reader_image_preview_open">Ampliar</string>
+    <string name="reader_image_preview_close">Fechar pré-visualização</string>
+    <string name="reader_image_preview_hint">Faça pinça para ampliar, arraste para mover, toque para fechar</string>
     <string name="reader_comic_page">Página %1$d da HQ</string>
     <string name="reader_chapter_indicator">Capítulo %1$d de %2$d</string>
     <string name="reader_chapter_empty">Este capítulo está vazio</string>
+    <string name="reader_chapter_paginating">A formatar o texto…</string>
 
     <!-- v56.5.1: durações e datas (as unidades estavam fixas no FlowFormatters de :core) -->
     <string name="duration_seconds">%1$d s</string>
@@ -331,4 +338,9 @@
     <string name="reader_bookmark_default">Marcador de texto selecionado</string>
     <string name="reader_pdf_annotation_on">Modo de anotação</string>
     <string name="reader_pdf_annotation_off">Sair do modo de anotação</string>
+    <string name="notes_tab_highlights">Destaques</string>
+    <string name="reader_font_system_short">Sistema</string>
+    <string name="reader_font_serif_short">Serif</string>
+    <string name="reader_font_sans_short">Sans</string>
+    <string name="library_import_files">Escolher arquivos locais</string>
 </resources>

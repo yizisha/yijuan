@@ -3,6 +3,7 @@ package com.flowreader.app.core.util
 import com.flowreader.app.domain.model.GestureAction
 import com.flowreader.app.domain.model.GestureSettings
 import com.flowreader.app.domain.model.ReadingSettings
+import com.flowreader.app.domain.model.TapZoneMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -69,6 +70,41 @@ class ReaderBehaviorTest {
     @Test
     fun zeroWidthFallsBackToTheMiddleAction() {
         assertEquals(GestureAction.TOGGLE_CONTROLS, ReaderBehavior.tapAction(0f, 0f, defaults))
+    }
+
+    @Test
+    fun leftHandModeGivesTheBulkOfTheWidthToNextPage() {
+        val settings = defaults.copy(
+            gestureSettings = GestureSettings(tapZoneMode = TapZoneMode.LEFT_HAND)
+        )
+        // Thumb edge = previous, the whole bulk = next, far edge = the menu action.
+        assertEquals(GestureAction.PREVIOUS_PAGE, ReaderBehavior.tapAction(50f, 1000f, settings))
+        assertEquals(GestureAction.NEXT_PAGE, ReaderBehavior.tapAction(500f, 1000f, settings))
+        assertEquals(GestureAction.NEXT_PAGE, ReaderBehavior.tapAction(800f, 1000f, settings))
+        assertEquals(GestureAction.TOGGLE_CONTROLS, ReaderBehavior.tapAction(950f, 1000f, settings))
+    }
+
+    @Test
+    fun rightHandModeMirrorsTheLeftHandLayout() {
+        val settings = defaults.copy(
+            gestureSettings = GestureSettings(tapZoneMode = TapZoneMode.RIGHT_HAND)
+        )
+        assertEquals(GestureAction.TOGGLE_CONTROLS, ReaderBehavior.tapAction(50f, 1000f, settings))
+        assertEquals(GestureAction.NEXT_PAGE, ReaderBehavior.tapAction(500f, 1000f, settings))
+        assertEquals(GestureAction.PREVIOUS_PAGE, ReaderBehavior.tapAction(950f, 1000f, settings))
+    }
+
+    @Test
+    fun oneHandedModesIgnoreTheLegacyEdgeWidths() {
+        val settings = defaults.copy(
+            gestureSettings = GestureSettings(
+                tapZoneMode = TapZoneMode.LEFT_HAND,
+                leftEdgeWidth = 45,
+                rightEdgeWidth = 45
+            )
+        )
+        // 45% edge widths would make the middle band tiny; the one-handed layout ignores them.
+        assertEquals(GestureAction.NEXT_PAGE, ReaderBehavior.tapAction(500f, 1000f, settings))
     }
 
     @Test

@@ -37,7 +37,10 @@ object ShareCardGenerator {
         val backgroundPaint = Paint().apply { color = backgroundArgb.toInt() }
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = textArgb.toInt() }
         val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accentArgb.toInt() }
-        val subtlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = textArgb.toInt(); alpha = 90 }
+        val subtlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textArgb.toInt()
+            alpha = 90
+        }
 
         val margin = 96f
 
@@ -82,7 +85,7 @@ object ShareCardGenerator {
         textPaint.textSize = 40f
         textPaint.isFakeBoldText = false
         subtlePaint.alpha = 160
-        canvas.drawText("#FlowReader 心流阅读", margin, height - 120f, subtlePaint)
+        canvas.drawText("#一卷", margin, height - 120f, subtlePaint)
 
         // Must stay inside the share_cards/ subdirectory: file_paths.xml only grants the
         // FileProvider that one path, so writing to the cache root would make

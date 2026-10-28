@@ -1,8 +1,10 @@
 # Built application files
 *.apk
 *.aar
+!app/libs/sherpa-onnx-1.13.8.aar
 *.ap_
 *.aab
+*.yjp
 
 # Files for the ART/Dalvik VM
 *.dex
@@ -118,3 +120,12 @@ providers.yaml.local
 
 # Working notes written during development sessions; not part of the project
 HANDOFF.md
+
+# Local device backups and development probes; never publish user data.
+/backup-device/
+/_dsh_probe.py
+/_gins/
+/_gins-build/
+/_gins-src/
+/re_target/
+/re_target2/

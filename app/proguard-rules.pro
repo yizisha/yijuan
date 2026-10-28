@@ -1,6 +1,9 @@
 # FlowReader ProGuard Rules
 # Optimized for release builds with R8
 
+# Shared interface for the bundled optional speech engine and controls.
+-keep class com.flowreader.plugin.api.** { *; }
+
 # ========================================
 # Basic Android & Kotlin Rules
 # ========================================
@@ -50,8 +53,8 @@
 # ========================================
 # Jetpack Compose
 # ========================================
--keep class androidx.compose.** { *; }
--keep class * extends androidx.compose.runtime.Composer { *; }
+# Compose libraries ship their own consumer rules. Keeping the entire package also retained
+# every unused extended icon and prevented R8 from optimizing the UI code.
 -dontwarn androidx.compose.**
 
 # ========================================
@@ -101,6 +104,10 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# The bundled speech JNI resolves config/data classes and their fields by their original names.
+-keep class com.k2fsa.sherpa.onnx.** { *; }
+-keep class com.flowreader.app.util.SpeechPcmCallback { *; }
 
 -keepclassmembers enum * {
     public static **[] values();

@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import com.flowreader.app.core.designsystem.token.FlowEditorialFont
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -13,6 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flowreader.app.domain.model.ReaderFontFamily
+import com.flowreader.app.domain.model.ReaderTextAlign
 import com.flowreader.app.domain.model.ReadingSettings
 import java.io.File
 
@@ -23,11 +25,16 @@ import java.io.File
  * spacing value all persisted correctly and were then ignored by `ReaderContent`.
  */
 
+/**
+ * Resolves a built-in face. Serif uses the bundled reading-room font so Chinese does not fall
+ * back to sans on devices without CJK serif. Extra system faces still use `Typeface.create`.
+ */
 fun ReaderFontFamily.toComposeFontFamily(): FontFamily = when (this) {
     ReaderFontFamily.DEFAULT -> FontFamily.Default
-    ReaderFontFamily.SERIF -> FontFamily.Serif
+    ReaderFontFamily.SERIF -> FlowEditorialFont
     ReaderFontFamily.SANS_SERIF -> FontFamily.SansSerif
     ReaderFontFamily.MONOSPACE -> FontFamily.Monospace
+    else -> FontFamily(Typeface.create(systemFamilyName, Typeface.NORMAL))
 }
 
 /**
@@ -59,7 +66,11 @@ fun readerBodyStyle(settings: ReadingSettings, fontFamily: FontFamily, palette: 
     fontSize = settings.fontSize.sp,
     lineHeight = ReaderMetrics.lineHeightSp(settings.fontSize, settings.lineSpacing).sp,
     letterSpacing = 0.sp,
-    textAlign = TextAlign.Justify,
+    textAlign = when (settings.textAlign) {
+        ReaderTextAlign.JUSTIFY -> TextAlign.Justify
+        ReaderTextAlign.START -> TextAlign.Start
+        ReaderTextAlign.CENTER -> TextAlign.Center
+    },
     color = palette.text,
     lineBreak = LineBreak.Paragraph,
     hyphens = Hyphens.None

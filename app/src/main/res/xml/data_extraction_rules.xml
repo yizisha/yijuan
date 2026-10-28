@@ -8,5 +8,10 @@
     <cloud-backup>
         <include domain="sharedpref" path="."/>
         <exclude domain="sharedpref" path="device.xml"/>
+        <exclude domain="sharedpref" path="book_file_sources.xml"/>
     </cloud-backup>
+    <device-transfer>
+        <!-- A transferred location cannot transfer the provider's persisted URI permission. -->
+        <exclude domain="sharedpref" path="book_file_sources.xml"/>
+    </device-transfer>
 </data-extraction-rules>

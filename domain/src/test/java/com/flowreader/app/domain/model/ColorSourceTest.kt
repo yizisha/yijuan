@@ -8,9 +8,7 @@ class ColorSourceTest {
 
     @Test
     fun bothSourcesAreRealChoices() {
-        // Deliberately two values, not three: a "follow system" option would be
-        // indistinguishable from DYNAMIC at runtime, i.e. another fake switch.
-        assertEquals(listOf(ColorSource.BRAND, ColorSource.DYNAMIC), ColorSource.entries.toList())
+        assertEquals(listOf(ColorSource.BRAND, ColorSource.MONOCHROME, ColorSource.DYNAMIC), ColorSource.entries.toList())
     }
 
     @Test

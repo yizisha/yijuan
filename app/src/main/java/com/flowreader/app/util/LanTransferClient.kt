@@ -1,5 +1,6 @@
 package com.flowreader.app.util
 
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -14,7 +15,7 @@ import java.net.URI
 object LanTransferClient {
 
     private const val TIMEOUT_MS = 30_000
-    private const val MAX_DOWNLOAD_BYTES = 200L * 1024 * 1024
+    private const val MAX_DOWNLOAD_BYTES = com.flowreader.app.data.repository.BackupArchive.MAX_BYTES
 
     suspend fun download(url: String, target: File): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
@@ -34,10 +35,11 @@ object LanTransferClient {
                     val buffer = ByteArray(8192)
                     var total = 0L
                     while (true) {
+                        kotlinx.coroutines.currentCoroutineContext().ensureActive()
                         val read = input.read(buffer)
                         if (read <= 0) break
                         total += read
-                        if (total > MAX_DOWNLOAD_BYTES) throw IllegalStateException("备份文件超过 200MB 上限")
+                        if (total > MAX_DOWNLOAD_BYTES) throw IllegalStateException("备份文件超过 8GB 上限")
                         output.write(buffer, 0, read)
                     }
                 }

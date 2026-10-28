@@ -39,6 +39,14 @@ class FullTextSearch @Inject constructor(
                 "ORDER BY rank\n" +
                 "LIMIT ?"
 
+        /**
+         * 重建/刷新索引时每批取多少章正文。
+         *
+         * 逐章取正文会让「打开书」「导入后首次搜索」变成上百次数据库查询；
+         * 一次全取又会让超大书的整本正文同时驻留内存。32 章是一个折中。
+         */
+        const val INDEX_CHUNK_SIZE = 32
+
         /** Global search across every indexed book; no book scoping, so no CAST needed. */
         internal const val SEARCH_ALL_SQL =
             "SELECT book_id, chapter_index, chapter_title, " +
@@ -51,6 +59,18 @@ class FullTextSearch @Inject constructor(
 
     @Volatile
     private var database: SQLiteDatabase? = null
+
+    /**
+     * Whether this device's SQLite actually has the fts5 module.
+     *
+     * Searching anything is impossible without it, so callers must not pretend a search ran and
+     * found nothing. Set once per process while the schema is created.
+     */
+    @Volatile
+    private var ftsReady: Boolean = true
+
+    /** See [ftsReady]. */
+    val isFtsAvailable: Boolean get() = ftsReady
 
     /**
      * Serializes every index mutation. `deleteAllContent()` + re-index (global rebuild) and
@@ -98,6 +118,36 @@ class FullTextSearch @Inject constructor(
             )
         """.trimIndent())
 
+        // Created *before* the FTS objects on purpose. On a device whose SQLite has no fts5 module,
+        // the CREATE VIRTUAL TABLE below throws, and every statement after it would never run — which
+        // is exactly how this table went missing on the Xiaomi test device and made the "skip
+        // re-indexing when nothing changed" check silently fail every time.
+        database?.execSQL("""
+            CREATE TABLE IF NOT EXISTS indexed_books(
+                book_id INTEGER PRIMARY KEY,
+                fingerprint TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+        """.trimIndent())
+
+        ftsReady = createFtsObjects()
+        if (!ftsReady) {
+            Log.w(
+                TAG,
+                "SQLite on this device has no fts5 module: full-text search is unavailable and " +
+                    "index writes are skipped instead of failing on every app start"
+            )
+        }
+    }
+
+    /**
+     * Creates the FTS5 virtual table and its triggers.
+     *
+     * @return false when this SQLite build has no fts5 module (Android ships it on most but not all
+     * devices — the Xiaomi PD2408/V2408A test device is one that does not). Never throws, so a
+     * missing module degrades to "search unavailable" instead of a broken schema and a startup error.
+     */
+    private fun createFtsObjects(): Boolean = try {
         database?.execSQL("""
             CREATE VIRTUAL TABLE IF NOT EXISTS book_content_fts USING fts5(
                 book_id,
@@ -131,6 +181,10 @@ class FullTextSearch @Inject constructor(
                 VALUES (new.id, new.book_id, new.chapter_index, new.chapter_title, new.content);
             END
         """.trimIndent())
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to create FTS objects", e)
+        false
     }
 
     private fun ensureInitialized() {
@@ -181,6 +235,7 @@ class FullTextSearch @Inject constructor(
         maxResults: Int = 50
     ): List<FtsSearchResult> = withContext(Dispatchers.IO) {
         ensureInitialized()
+        if (!ftsReady) throw FtsUnavailableException()
 
         if (query.isBlank()) return@withContext emptyList()
 
@@ -219,6 +274,7 @@ class FullTextSearch @Inject constructor(
         offset: Int = 0
     ): List<FtsSearchResult> = withContext(Dispatchers.IO) {
         ensureInitialized()
+        if (!ftsReady) throw FtsUnavailableException()
         if (query.isBlank()) return@withContext emptyList()
 
         val safeMatch = "\"${escapeFtsQuery(query)}\"*"
@@ -258,6 +314,41 @@ class FullTextSearch @Inject constructor(
         }
     }
 
+    /**
+     * True when [bookId]'s index was last written for exactly this [fingerprint].
+     *
+     * A miss (including any error) means "re-index"; never throws, so a broken state table can only
+     * cost speed, never correctness.
+     */
+    suspend fun isBookIndexed(bookId: Long, fingerprint: String): Boolean = withContext(Dispatchers.IO) {
+        ensureInitialized()
+        try {
+            database?.rawQuery(
+                "SELECT 1 FROM indexed_books WHERE book_id = ? AND fingerprint = ? LIMIT 1",
+                arrayOf(bookId.toString(), fingerprint)
+            )?.use { cursor ->
+                return@withContext cursor.moveToFirst()
+            }
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read index state for book $bookId", e)
+            false
+        }
+    }
+
+    /** Records that [bookId]'s index now matches [fingerprint]. */
+    suspend fun markBookIndexed(bookId: Long, fingerprint: String) = withContext(Dispatchers.IO) {
+        ensureInitialized()
+        try {
+            database?.execSQL(
+                "INSERT OR REPLACE INTO indexed_books (book_id, fingerprint, updated_at) VALUES (?, ?, ?)",
+                arrayOf(bookId.toString(), fingerprint, System.currentTimeMillis().toString())
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to record index state for book $bookId", e)
+        }
+    }
+
     suspend fun deleteAllContent() = withContext(Dispatchers.IO) {
         ensureInitialized()
         try {
@@ -286,10 +377,37 @@ class FullTextSearch @Inject constructor(
 class FtsException(message: String, cause: Throwable? = null) : Exception(message, cause)
 class FtsNotInitializedException(message: String) : Exception(message)
 
+/**
+ * This device's SQLite has no fts5 module, so no full-text search can ever succeed.
+ *
+ * Distinct from [FtsException] so the UI can say what is actually wrong (and so callers skip work
+ * that cannot possibly help) instead of reporting "no results" for a search that never ran.
+ */
+class FtsUnavailableException :
+    Exception("本机数据库不支持全文检索（SQLite 缺少 fts5 模块），搜索不可用")
+
+/**
+ * 一条搜索命中。
+ *
+ * [matchedText] 是**已去掉高亮标记与省略号**的可显示文本（调用方负责：FTS 原始片段含
+ * `<<` `>>`，直接显示会让用户看到标记）。
+ *
+ * [locatorOffset] 是该命中在**章内规范正文**中的 UTF-16 偏移，由 [SearchHitProjector]
+ * 回到正文重新定位并验证得到；-1 表示无法可靠定位（UI 必须标注为近似，
+ * 并退回章首，**不得**把 chapterIndex 当作字符偏移）。
+ */
 data class FtsSearchResult(
     val chapterIndex: Int,
     val chapterTitle: String,
     val matchedText: String,
     val bookId: Long = 0,
-    val bookTitle: String = ""
-)
+    val bookTitle: String = "",
+    /** 章内 UTF-16 命中偏移；-1 表示未定位。 */
+    val locatorOffset: Int = -1,
+    /** 定位可信度；默认保守为近似。 */
+    val locatorConfidence: com.flowreader.app.domain.model.SearchHitProjector.Confidence =
+        com.flowreader.app.domain.model.SearchHitProjector.Confidence.APPROXIMATE
+) {
+    /** 是否具备可精确跳转的坐标。 */
+    val isLocatable: Boolean get() = locatorOffset >= 0
+}

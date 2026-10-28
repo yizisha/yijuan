@@ -1,6 +1,8 @@
 package com.flowreader.app.ui.screens.bookdetail
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
@@ -11,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,17 +24,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Highlight
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -38,19 +47,21 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,17 +74,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
 import com.flowreader.app.R
+import com.flowreader.app.core.designsystem.component.BookCover
+import com.flowreader.app.core.designsystem.component.FlowIcons
 import com.flowreader.app.core.designsystem.component.FlowStateHost
+import com.flowreader.app.core.designsystem.component.FlowTopBar
 import com.flowreader.app.core.designsystem.token.FlowRadius
 import com.flowreader.app.core.designsystem.token.FlowSpacing
 import com.flowreader.app.core.util.FlowFormatters
@@ -83,7 +94,6 @@ import com.flowreader.app.domain.model.Bookmark
 import com.flowreader.app.domain.model.Chapter
 import com.flowreader.app.domain.repository.AnnotationExportFormat
 import com.flowreader.app.ui.components.durationText
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -100,13 +110,43 @@ fun BookDetailScreen(
     bookId: Long,
     onBackClick: () -> Unit,
     onReadClick: (Long, Int) -> Unit,
-    viewModel: BookDetailViewModel = hiltViewModel()
+    onOpenStats: () -> Unit = {},
+    viewModel: BookDetailViewModel = hiltViewModel(),
+    onOpenBookDetail: (Long) -> Unit = { onReadClick(it, -1) }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     var showTagsDialog by remember { mutableStateOf(false) }
     var showExportMenu by remember { mutableStateOf(false) }
+    var showMetadataDialog by remember { mutableStateOf(false) }
+    var showFileLocation by remember { mutableStateOf(false) }
+    var showSeries by remember { mutableStateOf(false) }
+    if (showSeries) {
+        com.flowreader.app.ui.components.BookSeriesSheet(
+            initialName = uiState.book?.seriesName,
+            initialBookId = bookId,
+            onOpenBook = { showSeries = false; onReadClick(it, -1) },
+            onShowDetail = { showSeries = false; if (it == bookId) viewModel.refreshSeries() else onOpenBookDetail(it) },
+            onDismiss = { showSeries = false; viewModel.refreshSeries() }
+        )
+    }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val coverPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> if (uri != null) viewModel.updateCover(uri) }
+
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
+        }
+    }
+
+    if (showFileLocation) {
+        uiState.book?.let { BookFileLocationSheet(it) { showFileLocation = false } }
+    }
 
     // Export leaves through the system share sheet instead of a truncated AlertDialog preview.
     val exportText = uiState.annotationExportText
@@ -128,18 +168,22 @@ fun BookDetailScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        uiState.book?.title ?: stringResource(R.string.book_detail_title),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+            FlowTopBar(
+                title = uiState.book?.title ?: stringResource(R.string.book_detail_title),
+                onNavigateUp = onBackClick,
+                actions = {
+                    uiState.book?.let { book ->
+                        IconButton(onClick = viewModel::toggleFavorite) {
+                            Icon(
+                                if (book.isFavorite) androidx.compose.material.icons.Icons.Filled.Star else androidx.compose.material.icons.Icons.Outlined.StarBorder,
+                                contentDescription = stringResource(
+                                    if (book.isFavorite) R.string.shelf_unfavorite else R.string.shelf_favorite
+                                ),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             )
@@ -162,7 +206,100 @@ fun BookDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(FlowSpacing.lg)
             ) {
                 item(key = "header") {
-                    BookInfoHeader(book = book, onReadClick = { onReadClick(bookId, -1) })
+                    BookInfoHeader(
+                        book = book,
+                        onReadClick = { onReadClick(bookId, -1) },
+                        onCoverClick = { coverPicker.launch("image/*") }
+                    )
+                }
+
+                item(key = "metadata_actions") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(FlowSpacing.sm)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showMetadataDialog = true },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(FlowIcons.Notes, contentDescription = null)
+                            Spacer(modifier = Modifier.width(FlowSpacing.xs))
+                            Text(
+                                text = stringResource(R.string.book_detail_edit_metadata),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        if (book.format == com.flowreader.app.domain.model.BookFormat.TXT ||
+                            book.format == com.flowreader.app.domain.model.BookFormat.MARKDOWN
+                        ) {
+                            OutlinedButton(
+                                onClick = { viewModel.reparseChapters() },
+                                enabled = !uiState.isReparsing,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = null)
+                                Spacer(modifier = Modifier.width(FlowSpacing.xs))
+                                Text(
+                                    text = stringResource(
+                                        if (uiState.isReparsing) {
+                                            R.string.book_detail_reparse_running
+                                        } else {
+                                            R.string.book_detail_reparse
+                                        }
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Secondary pages: the detail screen stays an overview, the numbers get their own
+                // screen (reference-reader structure) instead of one very long scroll.
+                item(key = "detail_links") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+                    ) {
+                        Column {
+                            DetailLinkRow(
+                                icon = FlowIcons.Statistics,
+                                title = stringResource(R.string.book_detail_reading_stats),
+                                subtitle = durationText(uiState.totalReadTime),
+                                onClick = onOpenStats
+                            )
+                            HorizontalDivider()
+                            DetailLinkRow(
+                                icon = FlowIcons.Book,
+                                title = stringResource(R.string.book_detail_chapter_list),
+                                subtitle = stringResource(if (book.format == com.flowreader.app.domain.model.BookFormat.PDF) R.string.pdf_page_count else R.string.book_detail_chapter_count, book.totalChapters),
+                                onClick = { selectedTab = 0 }
+                            )
+                            HorizontalDivider()
+                            DetailLinkRow(
+                                icon = Icons.Default.Bookmark,
+                                title = stringResource(R.string.reader_toc_tab_bookmarks),
+                                subtitle = "${uiState.bookmarks.size}",
+                                onClick = { selectedTab = 1 }
+                            )
+                            HorizontalDivider()
+                            DetailLinkRow(
+                                icon = Icons.Default.Highlight,
+                                title = stringResource(R.string.reader_toc_tab_notes),
+                                subtitle = "${uiState.annotations.size}",
+                                onClick = { selectedTab = 2 }
+                            )
+                            HorizontalDivider()
+                            DetailLinkRow(
+                                icon = FlowIcons.Folder,
+                                title = stringResource(R.string.book_file_location),
+                                subtitle = stringResource(R.string.book_file_location_summary),
+                                onClick = { showFileLocation = true }
+                            )
+                        }
+                    }
                 }
 
                 item(key = "stats") {
@@ -170,6 +307,13 @@ fun BookDetailScreen(
                         totalReadTime = uiState.totalReadTime,
                         totalReadPages = uiState.totalReadPages
                     )
+                }
+
+                item(key = "series") {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)) {
+                        DetailLinkRow(FlowIcons.Book, stringResource(R.string.series_title),
+                            book.seriesName ?: stringResource(R.string.series_unassigned), { showSeries = true })
+                    }
                 }
 
                 item(key = "tags") {
@@ -278,6 +422,91 @@ fun BookDetailScreen(
             onDismiss = { showTagsDialog = false }
         )
     }
+
+    val book = uiState.book
+    if (showMetadataDialog && book != null) {
+        MetadataDialog(
+            title = book.title,
+            author = book.author,
+            onDismiss = { showMetadataDialog = false },
+            onSave = { title, author ->
+                viewModel.updateMetadata(title, author)
+                showMetadataDialog = false
+            }
+        )
+    }
+}
+
+/** Edits the two fields a reader is most likely to want fixed after a messy import. */
+@Composable
+private fun MetadataDialog(title: String, author: String, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+    var titleText by remember { mutableStateOf(title) }
+    var authorText by remember { mutableStateOf(author) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.book_detail_edit_metadata)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(FlowSpacing.md)) {
+                OutlinedTextField(
+                    value = titleText,
+                    onValueChange = { titleText = it },
+                    label = { Text(stringResource(R.string.book_detail_edit_title_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = authorText,
+                    onValueChange = { authorText = it },
+                    label = { Text(stringResource(R.string.book_detail_edit_author_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = titleText.isNotBlank() || authorText.isNotBlank(),
+                onClick = { onSave(titleText, authorText) }
+            ) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
+}
+
+/**
+ * A row in the detail page's link card: icon, label, a one-line summary and a chevron.
+ */
+@Composable
+private fun DetailLinkRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = FlowSpacing.lg, vertical = FlowSpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(FlowSpacing.md)
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(text = title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(
+            text = subtitle,
+            modifier = Modifier.widthIn(max = 160.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Icon(
+            imageVector = FlowIcons.Next,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @Composable
@@ -294,7 +523,10 @@ private fun TabEmpty(message: String) {
 
 @Composable
 private fun TagEditorCard(tags: List<String>, onEdit: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+    ) {
         Column(
             modifier = Modifier.padding(FlowSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(FlowSpacing.sm)
@@ -318,24 +550,73 @@ private fun TagEditorCard(tags: List<String>, onEdit: () -> Unit) {
     }
 }
 
+/**
+ * Multi-tag editor: existing tags are removable chips and new ones are appended from the field, so
+ * a book can carry several tags without the user hand-writing a comma-separated string.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TagsDialog(tags: List<String>, onSave: (String) -> Unit, onDismiss: () -> Unit) {
-    var text by remember(tags) { mutableStateOf(tags.joinToString(", ")) }
+    var current by remember(tags) { mutableStateOf(tags.toList()) }
+    var draft by remember { mutableStateOf("") }
+
+    fun addDraft() {
+        val value = draft.trim()
+        if (value.isNotEmpty() && current.none { it.equals(value, ignoreCase = true) }) {
+            current = current + value
+        }
+        draft = ""
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.book_detail_tags_edit_title)) },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(stringResource(R.string.book_detail_tags_hint)) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(FlowSpacing.sm)) {
+                if (current.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.book_detail_tags_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(FlowSpacing.sm)) {
+                        current.forEach { tag ->
+                            InputChip(
+                                selected = false,
+                                onClick = { current = current - tag },
+                                label = { Text(tag) },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.action_delete),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    label = { Text(stringResource(R.string.book_detail_tags_hint)) },
+                    singleLine = true,
+                    trailingIcon = {
+                        TextButton(onClick = { addDraft() }, enabled = draft.isNotBlank()) {
+                            Text(stringResource(R.string.book_detail_tags_add))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(text)
+                    // A tag still sitting in the field counts as entered.
+                    val finalTags = if (draft.isBlank()) current else current + draft.trim()
+                    onSave(finalTags.distinct().joinToString(", "))
                     onDismiss()
                 }
             ) {
@@ -351,7 +632,7 @@ private fun ReadingStatsCard(totalReadTime: Long, totalReadPages: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(FlowRadius.md),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     ) {
         Row(
             modifier = Modifier
@@ -367,7 +648,7 @@ private fun ReadingStatsCard(totalReadTime: Long, totalReadPages: Int) {
             StatColumn(
                 icon = {
                     Icon(
-                        Icons.AutoMirrored.Filled.MenuBook,
+                        FlowIcons.Book,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -390,32 +671,20 @@ private fun StatColumn(icon: @Composable () -> Unit, value: String, label: Strin
 }
 
 @Composable
-private fun BookInfoHeader(book: Book, onReadClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(FlowRadius.lg)) {
-        Column(modifier = Modifier.padding(FlowSpacing.lg)) {
+private fun BookInfoHeader(book: Book, onReadClick: () -> Unit, onCoverClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(FlowRadius.lg),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+    ) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp, 150.dp)
-                        .clip(RoundedCornerShape(FlowRadius.sm))
-                ) {
-                    val coverPath = book.coverPath
-                    if (coverPath.isNullOrBlank()) {
-                        CoverFallback()
-                    } else {
-                        SubcomposeAsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(File(coverPath))
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = stringResource(R.string.book_detail_cover_of, book.title),
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                            loading = { CoverFallback() },
-                            error = { CoverFallback() }
-                        )
-                    }
-                }
+                BookCover(
+                    title = book.title,
+                    author = book.author,
+                    coverPath = book.coverPath,
+                    modifier = Modifier.size(104.dp, 152.dp).clickable(onClick = onCoverClick)
+                )
 
                 Spacer(modifier = Modifier.width(FlowSpacing.lg))
 
@@ -434,7 +703,19 @@ private fun BookInfoHeader(book: Book, onReadClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(FlowSpacing.sm))
                     Text(
-                        text = stringResource(R.string.book_detail_chapter_count, book.totalChapters),
+                        text = listOfNotNull(
+                            stringResource(if (book.format == com.flowreader.app.domain.model.BookFormat.PDF) R.string.pdf_page_count else R.string.book_detail_chapter_count, book.totalChapters),
+                            formatWordCount(book.wordCount).takeIf { book.wordCount > 0 }
+                                ?.let { stringResource(R.string.book_detail_word_count_value, it) }
+                        ).joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(FlowSpacing.sm))
+                    Text(
+                        stringResource(R.string.book_detail_file_size_value, if (book.fileSize > 0)
+                            android.text.format.Formatter.formatFileSize(LocalContext.current, book.fileSize)
+                            else stringResource(R.string.book_detail_size_unknown)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -471,9 +752,9 @@ private fun BookInfoHeader(book: Book, onReadClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(FlowSpacing.lg))
 
-            Button(onClick = onReadClick, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onReadClick, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small) {
                 Icon(
-                    imageVector = if (book.readingProgress > 0) Icons.Default.PlayArrow else Icons.AutoMirrored.Filled.MenuBook,
+                    imageVector = if (book.readingProgress > 0) Icons.Default.PlayArrow else FlowIcons.Book,
                     contentDescription = null
                 )
                 Spacer(modifier = Modifier.width(FlowSpacing.sm))
@@ -496,11 +777,11 @@ private fun CoverFallback() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.MenuBook,
+            imageVector = FlowIcons.Book,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -511,7 +792,11 @@ private fun CoverFallback() {
 @Composable
 private fun AnnotationItem(annotation: Annotation, onDelete: () -> Unit) {
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(FlowRadius.sm)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(FlowRadius.lg),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

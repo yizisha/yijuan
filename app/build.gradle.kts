@@ -15,10 +15,16 @@ android {
         applicationId = "com.flowreader.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5652
+        versionCode = 5710
 
-        versionName = "56.5.2"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionName = "0.3.13"
+        // Ship one ABI per direct-install APK. Models are downloaded separately.
+        ndk { abiFilters += providers.gradleProperty("speechAbis").orElse("arm64-v8a").get().split(",") }
+        if (providers.gradleProperty("speechSmoke").isPresent) applicationIdSuffix = ".speechcheck"
+        testInstrumentationRunner = if (providers.gradleProperty("releaseSmoke").isPresent) {
+            "com.flowreader.app.experience.ReleaseExperienceTest"
+        } else "androidx.test.runner.AndroidJUnitRunner"
+        testProguardFiles("release-test-rules.pro")
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -69,7 +75,14 @@ android {
             isIncludeAndroidResources = true
         }
     }
+    // Isolated instrumentation can exercise the actual R8 build without touching the user's app.
+    if (providers.gradleProperty("releaseSmoke").isPresent) testBuildType = "release"
+    if (providers.gradleProperty("speechSmoke").isPresent) {
+        sourceSets.getByName("androidTest").assets.srcDir(rootProject.layout.buildDirectory.dir("speech-smoke-assets"))
+    }
     packaging {
+        // Compress native libraries in the direct-install APK; Android extracts them at install time.
+        jniLibs { useLegacyPackaging = true }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -82,6 +95,11 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":feature:library"))
     implementation(project(":feature:reader"))
+    implementation(project(":plugin-api"))
+    implementation(project(":plugin:tts"))
+    implementation(files("libs/sherpa-onnx-1.13.8.aar"))
+    // Read the publisher's tar.bz2 model packages without bundling any model weights.
+    implementation("org.apache.commons:commons-compress:1.27.1")
 
     // Core library desugaring
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
@@ -122,8 +140,17 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // SAF tree access for the folder scanner
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
+    // Fingerprint / device-credential unlock for the app lock
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
+
     // Image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
+    // SVG 解码（静态插图用；2.7.0 与 coil-compose 必须同版本）。
+    implementation("io.coil-kt:coil-svg:2.7.0")
 
     // Baseline Profile runtime installer (profile rules live in src/main/baseline-prof.txt)
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
@@ -148,10 +175,24 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.16")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     testImplementation("androidx.room:room-testing:2.6.1")
+    // SVG 静态渲染的安全边界测试直接调 androidsvg（coil-svg 的传递依赖是 runtime scope，
+    // 单测需要 compile scope 才能引用；版本必须与 coil-svg 2.7.0 传递的一致）。
+    testImplementation("com.caverock:androidsvg-aar:1.4")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    // 真机端到端导入验证：用真实设备 SQLite/WAL 与真实 filesDir 跑内容引擎链路，
+    // 而不是 Robolectric 的模拟实现（同版本 schema 校验类缺陷只在真机开库时才暴露）。
+    androidTestImplementation("androidx.test:core-ktx:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    if (!providers.gradleProperty("releaseSmoke").isPresent) {
+        // A black-box release probe must not install TestMainDispatcherFactory or test exception
+        // handlers into the minified application's process. Debug Compose tests keep these tools.
+        androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+        androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
+        androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    }
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

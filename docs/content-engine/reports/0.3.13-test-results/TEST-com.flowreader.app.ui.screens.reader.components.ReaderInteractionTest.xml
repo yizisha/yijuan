@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:14:40.311Z" hostname="LAPTOP-L7547A4M" time="17.33">
+  <properties/>
+  <testcase name="pagedSelectionCanWriteANoteAndCancelWithoutSaving" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="13.717"/>
+  <testcase name="warmLongChapterJumpCannotReportItsCachedPredecessorAsTheDestination" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.851"/>
+  <testcase name="changingFromPagedToSlideActuallyMountsAScrollableReaderAndCanReturn" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="1.011"/>
+  <testcase name="pagedLongPressShowsSelectionAndCopiesTheSelectedText" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.181"/>
+  <testcase name="continuousReverseReturnsToThePreviousChaptersLastLocalPage" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.232"/>
+  <testcase name="coverChapterBoundaryKeepsBothPagesUntilSettled" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.167"/>
+  <testcase name="aTemporarilyUnavailableNeighbourCannotBeSkippedByAheadPrefetch" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.194"/>
+  <testcase name="explicitChapterJumpKeepsTheRequestedChapterWhenCachedNeighboursArrive" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.403"/>
+  <testcase name="continuousWindowKeepsTheVisiblePageThroughPrependEvictionAndReverse" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.454"/>
+  <testcase name="chapterBoundaryKeepsBothPagesInTheSameAnimationUntilSettled" classname="com.flowreader.app.ui.screens.reader.components.ReaderInteractionTest" time="0.12"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

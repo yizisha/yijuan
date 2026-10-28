@@ -8,6 +8,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -18,13 +19,29 @@ class ReadingStatsRepositoryImplTest {
     private val bookDao = mockk<BookDao>()
     private val repository = ReadingStatsRepositoryImpl(statsDao, bookDao)
 
+    @Test fun concurrentDeltasDoNotOverwriteEachOther() = runTest {
+        var row = ReadingStatsEntity(statsVersion = 3, id = 1, bookId = 1, date = LocalDate.now().toString(), readTimeSeconds = 10)
+        coEvery { statsDao.getStatsByDate(1, any()) } coAnswers {
+            val snapshot = row
+            kotlinx.coroutines.delay(10)
+            snapshot
+        }
+        coEvery { statsDao.updateStats(any()) } coAnswers { row = firstArg() }
+        val first = async { repository.updateTodayStats(1, 1, 20) }
+        val second = async { repository.updateTodayStats(1, 2, 30) }
+        first.await()
+        second.await()
+        assertEquals(60L, row.readTimeSeconds)
+        assertEquals(3, row.readPages)
+    }
+
     @Test
     fun getRecentDailyStats_aggregatesRowsByDate() = runTest {
         val today = LocalDate.now().toString()
         coEvery { statsDao.getStatsSince(any()) } returns flowOf(
             listOf(
-                ReadingStatsEntity(bookId = 1L, date = today, readPages = 2, readTimeSeconds = 60),
-                ReadingStatsEntity(bookId = 2L, date = today, readPages = 3, readTimeSeconds = 120)
+                ReadingStatsEntity(statsVersion = 3, bookId = 1L, date = today, readPages = 2, readTimeSeconds = 60),
+                ReadingStatsEntity(statsVersion = 3, bookId = 2L, date = today, readPages = 3, readTimeSeconds = 120)
             )
         )
 
@@ -47,7 +64,7 @@ class ReadingStatsRepositoryImplTest {
         val rows = (0 until 7).flatMap { dayOffset ->
             val date = today.minusDays(dayOffset.toLong()).toString()
             (1L..3L).map { bookId ->
-                ReadingStatsEntity(bookId = bookId, date = date, readPages = 1, readTimeSeconds = 60)
+                ReadingStatsEntity(statsVersion = 3, bookId = bookId, date = date, readPages = 1, readTimeSeconds = 60)
             }
         }
         coEvery { statsDao.getStatsSince(any()) } returns flowOf(rows)
@@ -74,7 +91,7 @@ class ReadingStatsRepositoryImplTest {
     fun getRecentDailyStats_clampsANonPositiveLimit() = runTest {
         val requested = slot<String>()
         coEvery { statsDao.getStatsSince(capture(requested)) } returns flowOf(
-            listOf(ReadingStatsEntity(bookId = 1L, date = LocalDate.now().toString(), readPages = 1, readTimeSeconds = 60))
+            listOf(ReadingStatsEntity(statsVersion = 3, bookId = 1L, date = LocalDate.now().toString(), readPages = 1, readTimeSeconds = 60))
         )
 
         repository.getRecentDailyStats(0).collect { daily ->
@@ -89,7 +106,7 @@ class ReadingStatsRepositoryImplTest {
         // Date must sit inside the 7-day window regardless of when CI runs.
         val recentDate = java.time.LocalDate.now().minusDays(1).toString()
         coEvery { statsDao.getAllStats() } returns listOf(
-            ReadingStatsEntity(bookId = 9L, date = recentDate, readPages = 8, readTimeSeconds = 300)
+            ReadingStatsEntity(statsVersion = 3, bookId = 9L, date = recentDate, readPages = 8, readTimeSeconds = 300)
         )
         coEvery { bookDao.getBookById(9L) } returns BookEntity(id = 9L, title = "Book", author = "Author", filePath = "")
 

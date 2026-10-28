@@ -4,7 +4,8 @@ import com.flowreader.app.util.TtsManager
 
 /**
  * Small TTS coordination seam for [ReaderViewModel]: decides what to speak from a reading
- * position and exposes pause / stop / shutdown. The speech engine itself stays in [TtsManager].
+ * position and exposes pause / stop / shutdown. [TtsManager] starts the bundled engine only when
+ * the user has explicitly enabled speech and requests playback.
  *
  * Extracted from `ReaderViewModel` in v54 so the ViewModel only orchestrates.
  */

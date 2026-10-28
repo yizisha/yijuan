@@ -14,9 +14,10 @@ class ReadingSettingsTest {
         assertEquals(1.0f, settings.paragraphSpacing)
         assertEquals(ReaderPaletteId.PAPER, settings.palette)
         assertEquals(ReaderPaletteId.NIGHT, settings.nightPalette)
-        assertEquals(PageMode.SLIDE, settings.pageMode)
+        assertEquals(PageMode.PAGED, settings.pageMode)
         assertTrue(settings.firstLineIndent)
         assertTrue(settings.keepScreenOn)
+        assertTrue(settings.volumeKeyTurnPage)
         assertEquals(20, settings.eyeProtectionIntervalMinutes)
     }
 

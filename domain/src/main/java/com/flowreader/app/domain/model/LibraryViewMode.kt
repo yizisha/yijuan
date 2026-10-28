@@ -6,6 +6,6 @@ enum class LibraryViewMode(val displayName: String) {
     LIST("列表");
 
     companion object {
-        fun fromStoredName(raw: String?): LibraryViewMode = entries.firstOrNull { it.name == raw } ?: LIST
+        fun fromStoredName(raw: String?): LibraryViewMode = entries.firstOrNull { it.name == raw } ?: GRID
     }
 }

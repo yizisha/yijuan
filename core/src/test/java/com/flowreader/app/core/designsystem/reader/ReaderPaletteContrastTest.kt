@@ -21,9 +21,9 @@ class ReaderPaletteContrastTest {
     }
 
     @Test
-    fun eighteenBuiltInPalettesAreAvailable() {
-        assertEquals(18, ReaderPalettes.all.size)
-        assertEquals(9, ReaderPaletteId.LIGHT_PALETTES.size)
+    fun nineteenBuiltInPalettesAreAvailable() {
+        assertEquals(19, ReaderPalettes.all.size)
+        assertEquals(10, ReaderPaletteId.LIGHT_PALETTES.size)
         assertEquals(9, ReaderPaletteId.DARK_PALETTES.size)
     }
 
@@ -56,4 +56,13 @@ class ReaderPaletteContrastTest {
             assertEquals("${palette.id} isDark disagrees with its background", palette.isDark, luminance < 0.2)
         }
     }
+    @Test fun cleanPaperMeetsContrastWhileEveryNightPaletteRetainsItsExactColors() {
+        val clean = com.flowreader.app.domain.model.AppVisualStyle.CLEAN_BLUE
+        val warm = com.flowreader.app.domain.model.AppVisualStyle.WARM_PAPER
+        val paper = ReaderPalettes.of(ReaderPaletteId.PAPER, clean)
+        assertTrue(ColorContrast.ratio(paper.textArgb, paper.backgroundArgb) >= ColorContrast.AA_BODY_TEXT)
+        assertTrue(ColorContrast.ratio(paper.secondaryTextArgb, paper.backgroundArgb) >= ColorContrast.AA_BODY_TEXT)
+        ReaderPaletteId.DARK_PALETTES.forEach { assertEquals(ReaderPalettes.of(it, warm), ReaderPalettes.of(it, clean)) }
+    }
+
 }

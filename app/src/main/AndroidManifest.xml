@@ -3,9 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-      v53: the only network code in the app is the LAN-only OPDS client. It is guarded in
-      `OpdsAddress` to private address ranges; nothing else opens a socket, and no analytics,
-      crash reporting or sync exists. See the "否决清单" section of ROADMAP.md.
+      OPDS and transfers remain LAN-only. Speech is bundled and does not download executable code.
+      No analytics, crash reporting or account/sync service is introduced.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -14,6 +13,16 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29"
         tools:ignore="ScopedStorage" />
+
+    <!-- App lock: fingerprint only. The PIN fallback needs no permission at all. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <!-- Only discover the system speech engines when the optional component is used. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 
     <application
         android:name=".FlowReaderApplication"
@@ -28,6 +37,11 @@
         android:theme="@style/Theme.FlowReader"
         tools:targetApi="34">
 
+        <service
+            android:name=".util.BackupJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -41,6 +55,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="application/pdf" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -51,7 +66,7 @@
 
         <provider
             android:name="com.flowreader.app.provider.FlowReaderContentProvider"
-            android:authorities="com.flowreader.app.provider"
+            android:authorities="${applicationId}.provider"
             android:exported="true"
             android:enabled="true"
             android:multiprocess="false" />

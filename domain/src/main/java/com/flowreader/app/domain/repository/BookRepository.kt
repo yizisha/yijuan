@@ -15,6 +15,10 @@ interface BookRepository {
     suspend fun getBookByPath(filePath: String): Book?
     suspend fun insertBook(book: Book): Long
     suspend fun updateBook(book: Book)
+    suspend fun setFavorite(bookId: Long, isFavorite: Boolean)
+    suspend fun setBooksSeries(bookIds: List<Long>, seriesName: String?)
+    suspend fun reorderSeries(seriesName: String, bookIds: List<Long>)
+    suspend fun renameSeries(seriesName: String, newName: String)
     suspend fun deleteBook(book: Book)
     suspend fun deleteBookById(id: Long)
     suspend fun updateReadingProgress(bookId: Long, chapter: Int, position: Int, progress: Float)

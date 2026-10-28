@@ -1,5 +1,6 @@
 package com.flowreader.app.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -29,7 +30,9 @@ data class ChapterEntity(
     val title: String,
     val content: String = "",
     val startPosition: Int = 0,
-    val endPosition: Int = 0
+    val endPosition: Int = 0,
+    /** Volume ("分卷") label, null when the book has no volume structure. */
+    val volume: String? = null
 ) {
     fun toDomain(): Chapter = Chapter(
         id = id,
@@ -38,7 +41,8 @@ data class ChapterEntity(
         title = title,
         content = content,
         startPosition = startPosition,
-        endPosition = endPosition
+        endPosition = endPosition,
+        volume = volume
     )
 
     companion object {
@@ -49,7 +53,8 @@ data class ChapterEntity(
             title = chapter.title,
             content = chapter.content,
             startPosition = chapter.startPosition,
-            endPosition = chapter.endPosition
+            endPosition = chapter.endPosition,
+            volume = chapter.volume
         )
     }
 }
@@ -60,5 +65,12 @@ data class ChapterMetadata(
     val index: Int,
     val title: String,
     val startPosition: Int,
-    val endPosition: Int
+    val endPosition: Int,
+    val volume: String? = null
+)
+
+/** [ChapterDao.getChapterContents] 的投影：只取章序号与正文，用于批量定位搜索结果。 */
+data class ChapterContentRow(
+    @ColumnInfo(name = "index") val chapterIndex: Int,
+    val content: String?
 )

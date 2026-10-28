@@ -10,4 +10,7 @@
     <string name="flow_action_close_selection">退出多选</string>
     <string name="flow_selection_count">已选择 %1$d 项</string>
     <string name="flow_cover_description">《%1$s》封面</string>
+    <string name="flow_customized">已自定义</string>
+    <string name="flow_expanded">已展开</string>
+    <string name="flow_collapsed">已折叠</string>
 </resources>

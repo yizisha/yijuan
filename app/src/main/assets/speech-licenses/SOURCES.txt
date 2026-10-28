@@ -1,0 +1,32 @@
+页间离线语音组件来源（2026-10-15）
+
+sherpa-onnx 1.13.8, Apache-2.0
+https://github.com/k2-fsa/sherpa-onnx/tree/v1.13.8
+Official AAR SHA256: 633c24321e06b1fe79feafa03ea16cbc0f8a286641e2da3559bac91bdb13bd96
+https://github.com/k2-fsa/sherpa-onnx/releases/tag/v1.13.8
+
+ONNX Runtime, MIT
+https://github.com/microsoft/onnxruntime
+The accompanying MIT license is copied from the v1.23.2 source distribution;
+this notice does not assert the runtime version embedded in the publisher AAR.
+
+sherpa-onnx native dependencies include eSpeak NG (GPL-3.0),
+OpenFst (Apache-2.0), Kaldi (Apache-2.0), cppjieba (MIT).
+Upstream source and build scripts:
+https://github.com/k2-fsa/sherpa-onnx/tree/v1.13.8/cmake
+https://github.com/espeak-ng/espeak-ng
+https://github.com/yanyiwu/cppjieba
+https://github.com/kaldi-asr/kaldi
+https://www.openfst.org/
+This reader's existing project license is GPL-3.0.
+
+模型数据不包含在基础 APK；用户主动下载的归档保留原始 MODEL_CARD、LICENSE。
+小雅：模型卡中的数据集标注限非商业用途。
+超文：模型卡标注数据集 CC0，基于小雅微调；不据此推断整个模型无限制。
+Kokoro INT8 v1.1：模型 Apache-2.0；附带语音前端数据遵循各自许可。
+https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models
+https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh
+
+Download sources: GitHub official release; ghfast.top and gh-proxy.com community mirrors.
+All archives must match the pinned official SHA-256 before extraction.
+Mirrors are not operated by the model publisher or this app.

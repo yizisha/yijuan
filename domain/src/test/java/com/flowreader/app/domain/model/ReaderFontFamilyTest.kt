@@ -7,18 +7,22 @@ import org.junit.Test
 class ReaderFontFamilyTest {
 
     @Test
-    fun onlyFacesThePlatformCanResolveAreOffered() {
-        // v51 offered 宋体/黑体/楷体/仿宋 as separate chips that all resolved to the same
-        // system face; the enum now lists only what actually renders differently.
-        assertEquals(
-            listOf(
-                ReaderFontFamily.DEFAULT,
-                ReaderFontFamily.SERIF,
-                ReaderFontFamily.SANS_SERIF,
-                ReaderFontFamily.MONOSPACE
-            ),
-            ReaderFontFamily.entries.toList()
+    fun theDefaultFaceIsTheOnlyOneWithoutASystemFamilyName() {
+        // Every other chip resolves a real platform family through Typeface.create.
+        assertEquals(null, ReaderFontFamily.DEFAULT.systemFamilyName)
+        assertTrue(
+            ReaderFontFamily.entries
+                .filter { it != ReaderFontFamily.DEFAULT }
+                .all { !it.systemFamilyName.isNullOrBlank() }
         )
+    }
+
+    @Test
+    fun moreThanTheFourGenericFamiliesAreOffered() {
+        // v0.0.6 widened the list to the weights/widths Android actually ships.
+        assertTrue(ReaderFontFamily.entries.size >= 8)
+        assertTrue(ReaderFontFamily.LIGHT in ReaderFontFamily.entries)
+        assertTrue(ReaderFontFamily.MEDIUM in ReaderFontFamily.entries)
     }
 
     @Test

@@ -10,7 +10,7 @@ package com.flowreader.feature.reader
 class ReaderSessionTracker(
     private val pauseThresholdMs: Long = DEFAULT_PAUSE_THRESHOLD_MS,
     private val emaAlpha: Float = DEFAULT_EMA_ALPHA,
-    private val nowProvider: () -> Long = System::currentTimeMillis
+    private val nowProvider: () -> Long = { System.nanoTime() / 1_000_000L }
 ) {
 
     /** Pages completed in the current session; reset on [takeSnapshotAndReset]. */
@@ -27,21 +27,59 @@ class ReaderSessionTracker(
 
     /** Elapsed seconds of the current session. */
     val elapsedSeconds: Long
-        get() = (nowProvider() - startTime) / 1000L
+        get() {
+            settleTime()
+            return accumulatedMillis / 1000L
+        }
 
-    private var startTime = 0L
+    private var started = false
+    private var active = false
+    private var accumulatedMillis = 0L
+    private var lastSettledAt = 0L
     private var readChars = 0
     private var lastUpdateTime = 0L
     private var lastInteractionTime = 0L
 
-    fun startSession() {
+    fun startSession(active: Boolean = true) {
         val now = nowProvider()
-        startTime = now
+        started = true
+        this.active = active
+        accumulatedMillis = 0L
+        lastSettledAt = now
         lastInteractionTime = now
         lastUpdateTime = now
         readChars = 0
         readPages = 0
         lastPosition = 0
+    }
+
+    /** Background, locked screens and unopened content do not accrue reading time. */
+    fun setActive(value: Boolean) {
+        if (!started || active == value) return
+        settleTime()
+        active = value
+        if (value) {
+            lastSettledAt = nowProvider()
+            lastInteractionTime = lastSettledAt
+            lastUpdateTime = lastSettledAt
+        }
+    }
+
+    private fun settleTime() {
+        if (!started) return
+        val now = nowProvider()
+        if (active) {
+            // Visibility owns the clock. Staying on a page is still reading; page/scroll
+            // callbacks are not a heartbeat and must not silently stop time after five minutes.
+            accumulatedMillis += (now - lastSettledAt).coerceAtLeast(0L)
+        }
+        lastSettledAt = now
+    }
+
+    /** Change coordinate origin at a chapter boundary without counting a jump as reading. */
+    fun rebasePosition(position: Int) {
+        lastPosition = position
+        lastUpdateTime = nowProvider()
     }
 
     /**
@@ -50,10 +88,11 @@ class ReaderSessionTracker(
      */
     fun recordInteraction(position: Int): Boolean {
         val now = nowProvider()
-        val split = lastInteractionTime > 0 && now - lastInteractionTime > pauseThresholdMs
+        settleTime()
+        val split = started && now - lastInteractionTime > pauseThresholdMs
         if (split) {
-            startSession()
-            lastPosition = position
+            // Preserve the old delta for the caller to save. A reset here silently lost it.
+            rebasePosition(position)
         }
         lastInteractionTime = now
         return split
@@ -130,7 +169,9 @@ class ReaderSessionTracker(
     /** Consumes the current session and returns (pages, seconds) for persistence. */
     fun takeSnapshotAndReset(): Pair<Int, Long> {
         val snapshot = readPages to elapsedSeconds
-        startSession()
+        accumulatedMillis %= 1000L
+        readPages = 0
+        // Keep position, partial-page characters and activity deadline. Saving is not activity.
         return snapshot
     }
 

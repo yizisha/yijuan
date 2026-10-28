@@ -12,4 +12,6 @@
 <full-backup-content>
     <include domain="sharedpref" path="."/>
     <exclude domain="sharedpref" path="device.xml"/>
+    <!-- Original file locations and URI grants belong to this device only. -->
+    <exclude domain="sharedpref" path="book_file_sources.xml"/>
 </full-backup-content>

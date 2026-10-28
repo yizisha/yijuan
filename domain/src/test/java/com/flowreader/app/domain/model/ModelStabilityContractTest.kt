@@ -37,9 +37,6 @@ class ModelStabilityContractTest {
         DailyStats::class.java,
         ReadingSummary::class.java,
         ReadingReport::class.java,
-        WheelItem::class.java,
-        WheelConfig::class.java,
-        WheelResult::class.java,
         GlobalSearchResult::class.java
     )
 

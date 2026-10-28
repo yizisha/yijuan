@@ -1,0 +1,422 @@
+
+> Configure project :app
+WARNING: The option setting 'android.overridePathCheck=true' is experimental.
+The current default is 'false'.
+w: file:///R:/app/build.gradle.kts:55:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<KotlinJvmOptions>): Unit' is deprecated. The kotlinOptions types are deprecated, please migrate to the compilerOptions types. More details are here: https://kotl.in/u1r8ln.
+
+> Task :core:preBuild UP-TO-DATE
+> Task :core:preReleaseBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :core:writeReleaseAarMetadata UP-TO-DATE
+> Task :data:preBuild UP-TO-DATE
+> Task :data:preReleaseBuild UP-TO-DATE
+> Task :data:writeReleaseAarMetadata UP-TO-DATE
+> Task :domain:preBuild UP-TO-DATE
+> Task :domain:preReleaseBuild UP-TO-DATE
+> Task :domain:writeReleaseAarMetadata UP-TO-DATE
+> Task :plugin-api:preBuild UP-TO-DATE
+> Task :plugin-api:preReleaseBuild UP-TO-DATE
+> Task :plugin-api:writeReleaseAarMetadata UP-TO-DATE
+> Task :feature:library:preBuild UP-TO-DATE
+> Task :feature:library:preReleaseBuild UP-TO-DATE
+> Task :feature:library:writeReleaseAarMetadata UP-TO-DATE
+> Task :feature:reader:preBuild UP-TO-DATE
+> Task :feature:reader:preReleaseBuild UP-TO-DATE
+> Task :feature:reader:writeReleaseAarMetadata UP-TO-DATE
+> Task :plugin:tts:preBuild UP-TO-DATE
+> Task :plugin:tts:preReleaseBuild UP-TO-DATE
+> Task :plugin:tts:writeReleaseAarMetadata UP-TO-DATE
+> Task :core:generateReleaseResValues UP-TO-DATE
+> Task :app:generateReleaseBuildConfig
+> Task :core:generateReleaseResources UP-TO-DATE
+> Task :core:packageReleaseResources UP-TO-DATE
+> Task :data:generateReleaseResValues UP-TO-DATE
+> Task :data:generateReleaseResources UP-TO-DATE
+> Task :data:packageReleaseResources UP-TO-DATE
+> Task :domain:generateReleaseResValues UP-TO-DATE
+> Task :domain:generateReleaseResources UP-TO-DATE
+> Task :domain:packageReleaseResources UP-TO-DATE
+> Task :plugin-api:generateReleaseResValues UP-TO-DATE
+> Task :plugin-api:generateReleaseResources UP-TO-DATE
+> Task :plugin-api:packageReleaseResources UP-TO-DATE
+> Task :feature:library:generateReleaseResValues UP-TO-DATE
+> Task :feature:library:generateReleaseResources UP-TO-DATE
+> Task :feature:library:packageReleaseResources UP-TO-DATE
+> Task :feature:reader:generateReleaseResValues UP-TO-DATE
+> Task :feature:reader:generateReleaseResources UP-TO-DATE
+> Task :feature:reader:packageReleaseResources UP-TO-DATE
+> Task :plugin:tts:generateReleaseResValues UP-TO-DATE
+> Task :plugin:tts:generateReleaseResources UP-TO-DATE
+> Task :plugin:tts:packageReleaseResources UP-TO-DATE
+> Task :core:extractDeepLinksRelease UP-TO-DATE
+> Task :core:processReleaseManifest UP-TO-DATE
+> Task :data:extractDeepLinksRelease UP-TO-DATE
+> Task :data:processReleaseManifest UP-TO-DATE
+> Task :domain:extractDeepLinksRelease UP-TO-DATE
+> Task :domain:processReleaseManifest UP-TO-DATE
+> Task :plugin-api:extractDeepLinksRelease UP-TO-DATE
+> Task :plugin-api:processReleaseManifest UP-TO-DATE
+> Task :feature:library:extractDeepLinksRelease UP-TO-DATE
+> Task :feature:library:processReleaseManifest UP-TO-DATE
+> Task :feature:reader:extractDeepLinksRelease UP-TO-DATE
+> Task :feature:reader:processReleaseManifest UP-TO-DATE
+> Task :plugin:tts:extractDeepLinksRelease UP-TO-DATE
+> Task :plugin:tts:processReleaseManifest UP-TO-DATE
+> Task :core:parseReleaseLocalResources UP-TO-DATE
+> Task :core:generateReleaseRFile UP-TO-DATE
+> Task :data:parseReleaseLocalResources UP-TO-DATE
+> Task :data:generateReleaseRFile UP-TO-DATE
+> Task :domain:parseReleaseLocalResources UP-TO-DATE
+> Task :domain:generateReleaseRFile UP-TO-DATE
+> Task :plugin-api:parseReleaseLocalResources UP-TO-DATE
+> Task :plugin-api:generateReleaseRFile UP-TO-DATE
+> Task :feature:library:parseReleaseLocalResources UP-TO-DATE
+> Task :feature:library:generateReleaseRFile UP-TO-DATE
+> Task :feature:reader:parseReleaseLocalResources UP-TO-DATE
+> Task :feature:reader:generateReleaseRFile UP-TO-DATE
+> Task :plugin:tts:parseReleaseLocalResources UP-TO-DATE
+> Task :plugin:tts:generateReleaseRFile UP-TO-DATE
+> Task :core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:generateReleaseResValues UP-TO-DATE
+> Task :domain:compileReleaseKotlin UP-TO-DATE
+> Task :domain:javaPreCompileRelease UP-TO-DATE
+> Task :domain:compileReleaseJavaWithJavac NO-SOURCE
+> Task :domain:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :core:compileReleaseKotlin UP-TO-DATE
+> Task :core:javaPreCompileRelease UP-TO-DATE
+> Task :core:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :data:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:mergeReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources UP-TO-DATE
+> Task :app:parseReleaseLocalResources UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+> Task :data:kspReleaseKotlin UP-TO-DATE
+> Task :data:compileReleaseKotlin UP-TO-DATE
+> Task :data:javaPreCompileRelease UP-TO-DATE
+> Task :data:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :data:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :plugin-api:javaPreCompileRelease UP-TO-DATE
+> Task :plugin-api:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :plugin-api:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :feature:library:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:library:compileReleaseKotlin NO-SOURCE
+> Task :feature:library:javaPreCompileRelease UP-TO-DATE
+> Task :feature:library:compileReleaseJavaWithJavac NO-SOURCE
+> Task :feature:library:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :feature:reader:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:reader:compileReleaseKotlin UP-TO-DATE
+> Task :feature:reader:javaPreCompileRelease UP-TO-DATE
+> Task :feature:reader:compileReleaseJavaWithJavac NO-SOURCE
+> Task :feature:reader:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :plugin:tts:javaPreCompileRelease UP-TO-DATE
+> Task :plugin:tts:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :plugin:tts:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :data:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :feature:reader:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :core:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :feature:library:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :domain:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:processReleaseMainManifest
+> Task :plugin:tts:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :plugin-api:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :core:processReleaseJavaRes UP-TO-DATE
+> Task :core:createFullJarRelease UP-TO-DATE
+> Task :core:extractProguardFiles UP-TO-DATE
+> Task :domain:processReleaseJavaRes UP-TO-DATE
+> Task :domain:createFullJarRelease UP-TO-DATE
+> Task :domain:extractProguardFiles UP-TO-DATE
+> Task :domain:generateReleaseLintModel UP-TO-DATE
+> Task :app:processReleaseManifest
+> Task :domain:prepareLintJarForPublish UP-TO-DATE
+> Task :app:processReleaseManifestForPackage
+> Task :core:generateReleaseLintModel UP-TO-DATE
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :core:prepareLintJarForPublish UP-TO-DATE
+> Task :data:processReleaseJavaRes UP-TO-DATE
+> Task :data:createFullJarRelease UP-TO-DATE
+> Task :data:extractProguardFiles UP-TO-DATE
+> Task :data:generateReleaseLintModel UP-TO-DATE
+> Task :data:prepareLintJarForPublish UP-TO-DATE
+> Task :plugin-api:processReleaseJavaRes NO-SOURCE
+> Task :plugin-api:createFullJarRelease UP-TO-DATE
+> Task :plugin-api:extractProguardFiles UP-TO-DATE
+> Task :plugin-api:generateReleaseLintModel UP-TO-DATE
+> Task :plugin-api:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:library:processReleaseJavaRes NO-SOURCE
+> Task :feature:library:createFullJarRelease UP-TO-DATE
+> Task :feature:library:extractProguardFiles UP-TO-DATE
+> Task :feature:library:generateReleaseLintModel UP-TO-DATE
+> Task :feature:library:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:reader:processReleaseJavaRes UP-TO-DATE
+> Task :feature:reader:createFullJarRelease UP-TO-DATE
+> Task :feature:reader:extractProguardFiles UP-TO-DATE
+> Task :feature:reader:generateReleaseLintModel UP-TO-DATE
+> Task :feature:reader:prepareLintJarForPublish UP-TO-DATE
+> Task :plugin:tts:processReleaseJavaRes NO-SOURCE
+> Task :plugin:tts:createFullJarRelease UP-TO-DATE
+> Task :plugin:tts:extractProguardFiles UP-TO-DATE
+> Task :plugin:tts:generateReleaseLintModel UP-TO-DATE
+> Task :plugin:tts:prepareLintJarForPublish UP-TO-DATE
+> Task :data:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :data:mergeReleaseNativeLibs NO-SOURCE
+> Task :data:stripReleaseDebugSymbols NO-SOURCE
+> Task :data:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :data:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :data:extractReleaseAnnotations UP-TO-DATE
+> Task :data:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :data:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :data:mergeReleaseShaders UP-TO-DATE
+> Task :data:compileReleaseShaders NO-SOURCE
+> Task :data:generateReleaseAssets UP-TO-DATE
+> Task :data:packageReleaseAssets UP-TO-DATE
+> Task :data:prepareReleaseArtProfile UP-TO-DATE
+> Task :data:mergeReleaseJavaResource UP-TO-DATE
+> Task :data:syncReleaseLibJars UP-TO-DATE
+> Task :data:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :feature:reader:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :feature:reader:mergeReleaseNativeLibs NO-SOURCE
+> Task :feature:reader:stripReleaseDebugSymbols NO-SOURCE
+> Task :feature:reader:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:reader:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :feature:reader:extractReleaseAnnotations UP-TO-DATE
+> Task :feature:reader:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :feature:reader:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :feature:reader:mergeReleaseShaders UP-TO-DATE
+> Task :feature:reader:compileReleaseShaders NO-SOURCE
+> Task :feature:reader:generateReleaseAssets UP-TO-DATE
+> Task :feature:reader:packageReleaseAssets UP-TO-DATE
+> Task :feature:reader:prepareReleaseArtProfile UP-TO-DATE
+> Task :feature:reader:mergeReleaseJavaResource UP-TO-DATE
+> Task :feature:reader:syncReleaseLibJars UP-TO-DATE
+> Task :feature:reader:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :core:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :core:mergeReleaseNativeLibs NO-SOURCE
+> Task :core:stripReleaseDebugSymbols NO-SOURCE
+> Task :core:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :core:extractReleaseAnnotations UP-TO-DATE
+> Task :core:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :core:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :core:mergeReleaseShaders UP-TO-DATE
+> Task :core:compileReleaseShaders NO-SOURCE
+> Task :core:generateReleaseAssets UP-TO-DATE
+> Task :core:packageReleaseAssets UP-TO-DATE
+> Task :core:prepareReleaseArtProfile UP-TO-DATE
+> Task :core:mergeReleaseJavaResource UP-TO-DATE
+> Task :core:syncReleaseLibJars UP-TO-DATE
+> Task :core:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :feature:library:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :feature:library:mergeReleaseNativeLibs NO-SOURCE
+> Task :feature:library:stripReleaseDebugSymbols NO-SOURCE
+> Task :feature:library:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:library:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :feature:library:extractReleaseAnnotations UP-TO-DATE
+> Task :feature:library:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :feature:library:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :feature:library:mergeReleaseShaders UP-TO-DATE
+> Task :feature:library:compileReleaseShaders NO-SOURCE
+> Task :feature:library:generateReleaseAssets UP-TO-DATE
+> Task :feature:library:packageReleaseAssets UP-TO-DATE
+> Task :feature:library:prepareReleaseArtProfile UP-TO-DATE
+> Task :feature:library:mergeReleaseJavaResource UP-TO-DATE
+> Task :feature:library:syncReleaseLibJars UP-TO-DATE
+> Task :feature:library:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :domain:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :domain:mergeReleaseNativeLibs NO-SOURCE
+> Task :domain:stripReleaseDebugSymbols NO-SOURCE
+> Task :domain:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :domain:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :domain:extractReleaseAnnotations UP-TO-DATE
+> Task :domain:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :domain:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :domain:mergeReleaseShaders UP-TO-DATE
+> Task :domain:compileReleaseShaders NO-SOURCE
+> Task :domain:generateReleaseAssets UP-TO-DATE
+> Task :domain:packageReleaseAssets UP-TO-DATE
+> Task :domain:prepareReleaseArtProfile UP-TO-DATE
+> Task :domain:mergeReleaseJavaResource UP-TO-DATE
+> Task :domain:syncReleaseLibJars UP-TO-DATE
+> Task :domain:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :plugin:tts:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :plugin:tts:mergeReleaseNativeLibs NO-SOURCE
+> Task :plugin:tts:stripReleaseDebugSymbols NO-SOURCE
+> Task :plugin:tts:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :plugin:tts:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :plugin:tts:extractReleaseAnnotations UP-TO-DATE
+> Task :plugin:tts:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :plugin:tts:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :plugin:tts:mergeReleaseShaders UP-TO-DATE
+> Task :plugin:tts:compileReleaseShaders NO-SOURCE
+> Task :plugin:tts:generateReleaseAssets UP-TO-DATE
+> Task :plugin:tts:packageReleaseAssets UP-TO-DATE
+> Task :plugin:tts:prepareReleaseArtProfile UP-TO-DATE
+> Task :plugin:tts:mergeReleaseJavaResource UP-TO-DATE
+> Task :plugin:tts:syncReleaseLibJars UP-TO-DATE
+> Task :plugin:tts:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :plugin-api:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :plugin-api:mergeReleaseNativeLibs NO-SOURCE
+> Task :plugin-api:stripReleaseDebugSymbols NO-SOURCE
+> Task :plugin-api:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :plugin-api:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :plugin-api:extractReleaseAnnotations UP-TO-DATE
+> Task :plugin-api:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :plugin-api:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :plugin-api:mergeReleaseShaders UP-TO-DATE
+> Task :plugin-api:compileReleaseShaders NO-SOURCE
+> Task :plugin-api:generateReleaseAssets UP-TO-DATE
+> Task :plugin-api:packageReleaseAssets UP-TO-DATE
+> Task :plugin-api:prepareReleaseArtProfile UP-TO-DATE
+> Task :plugin-api:mergeReleaseJavaResource UP-TO-DATE
+> Task :plugin-api:syncReleaseLibJars UP-TO-DATE
+> Task :plugin-api:bundleReleaseLocalLintAar UP-TO-DATE
+> Task :domain:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :core:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :core:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :data:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :data:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :domain:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :plugin-api:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :plugin-api:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :feature:library:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :feature:library:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :feature:reader:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :feature:reader:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :plugin:tts:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :plugin:tts:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :core:generateReleaseLintVitalModel UP-TO-DATE
+> Task :data:generateReleaseLintVitalModel UP-TO-DATE
+> Task :domain:generateReleaseLintVitalModel UP-TO-DATE
+> Task :plugin-api:generateReleaseLintVitalModel UP-TO-DATE
+> Task :feature:library:generateReleaseLintVitalModel UP-TO-DATE
+> Task :feature:reader:generateReleaseLintVitalModel UP-TO-DATE
+> Task :plugin:tts:generateReleaseLintVitalModel UP-TO-DATE
+> Task :app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :core:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :data:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :domain:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :plugin-api:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :feature:library:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :feature:reader:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :plugin:tts:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :app:processReleaseResources
+> Task :data:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :feature:reader:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :core:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :feature:library:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :domain:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :plugin:tts:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :plugin-api:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :app:mergeReleaseNativeLibs UP-TO-DATE
+> Task :app:stripReleaseDebugSymbols UP-TO-DATE
+> Task :app:extractReleaseNativeSymbolTables UP-TO-DATE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :app:expandReleaseL8ArtProfileWildcards UP-TO-DATE
+> Task :app:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:compressReleaseAssets UP-TO-DATE
+> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :app:processApplicationManifestReleaseForBundle
+> Task :app:bundleReleaseResources
+> Task :app:collectReleaseDependencies UP-TO-DATE
+> Task :app:sdkReleaseDependencyData UP-TO-DATE
+> Task :app:validateSigningRelease UP-TO-DATE
+> Task :app:writeReleaseAppMetadata UP-TO-DATE
+> Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :app:kspReleaseKotlin
+> Task :app:compileReleaseKotlin
+w: file:///R:/app/src/main/java/com/flowreader/app/data/repository/BackupRepository.kt:180:45 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/main/java/com/flowreader/app/provider/FlowReaderContentProvider.kt:101:34 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/main/java/com/flowreader/app/ui/screens/reader/ReaderViewModel.kt:804:48 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/main/java/com/flowreader/app/ui/screens/reader/ReaderViewModel.kt:1105:162 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/main/java/com/flowreader/app/util/BookImporter.kt:71:52 'val currentPosition: Int' is deprecated. Use ReaderStateDao with TextLocator instead. Preserved for legacy schema compatibility.
+w: file:///R:/app/src/main/java/com/flowreader/app/util/CacheManager.kt:175:33 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/main/java/com/flowreader/app/util/CacheManager.kt:176:33 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/main/java/com/flowreader/app/util/CacheManager.kt:179:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///R:/app/src/main/java/com/flowreader/app/util/CacheManager.kt:208:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Please add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///R:/app/src/main/java/com/flowreader/app/util/OfflineSpeechArchive.kt:50:37 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+
+> Task :app:compileReleaseJavaWithJavac
+> Task :app:hiltAggregateDepsRelease UP-TO-DATE
+> Task :app:hiltJavaCompileRelease
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:transformReleaseClassesWithAsm
+> Task :app:expandReleaseArtProfileWildcards
+> Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :app:processReleaseJavaRes UP-TO-DATE
+> Task :app:mergeReleaseJavaResource UP-TO-DATE
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:minifyReleaseWithR8
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+
+> Task :app:l8DexDesugarLibRelease
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.concurrent.ConcurrentHashMap$TreeBin {
+  int lockState;
+}`
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.concurrent.ConcurrentHashMap {
+  int sizeCtl;
+  int transferIndex;
+  long baseCount;
+  int cellsBusy;
+}`
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.concurrent.ConcurrentHashMap$CounterCell {
+  long value;
+}`
+Info: Proguard configuration rule does not match anything: `-keepclassmembers enum * {
+  public static **[] values();
+  public static ** valueOf(java.lang.String);
+  public static final synthetic <fields>;
+}`
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.IntSummaryStatistics {
+  long count;
+  long sum;
+  int min;
+  int max;
+}`
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.LongSummaryStatistics {
+  long count;
+  long sum;
+  long min;
+  long max;
+}`
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.DoubleSummaryStatistics {
+  long count;
+  double sum;
+  double min;
+  double max;
+}`
+
+> Task :app:compileReleaseArtProfile
+> Task :app:shrinkReleaseRes
+> Task :app:convertReleaseProtoResources
+> Task :app:optimizeReleaseResources
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:assembleRelease
+
+[Incubating] Problems report is available at: file:///R:/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 3m 56s
+294 actionable tasks: 26 executed, 268 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.6.1/userguide/configuration_cache_enabling.html

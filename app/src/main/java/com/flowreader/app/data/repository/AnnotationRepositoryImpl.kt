@@ -4,6 +4,7 @@ import com.flowreader.app.core.util.AnnotationExporter
 import com.flowreader.app.data.local.dao.AnnotationDao
 import com.flowreader.app.data.local.entity.AnnotationEntity
 import com.flowreader.app.domain.model.Annotation
+import com.flowreader.app.domain.model.ResolutionQuality
 import com.flowreader.app.domain.repository.AnnotationExportFormat
 import com.flowreader.app.domain.repository.AnnotationRepository
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +42,27 @@ class AnnotationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertAnnotation(annotation: Annotation): Long {
-        return annotationDao.insertAnnotation(AnnotationEntity.fromDomain(annotation))
+        return annotationDao.insertAnnotation(AnnotationEntity.fromDomain(normalize(annotation)))
+    }
+
+    /**
+     * 批注范围规范化（主计划第 9 节）。
+     *
+     * 1. **合并重叠/相接区间**：同一次选择可能由多个 DisplayRange 投影而来，
+     *    若不去重，重叠批注会把同一段文字输出两遍；
+     * 2. **不猜测**：旧 `startPosition/endPosition` 一律原样保留，不因新 locator 存在就覆写；
+     * 3. **质量由数据决定**：没有 rangeLocator 就必须是 UNRESOLVED，不允许调用方口头声明 EXACT。
+     */
+    private fun normalize(annotation: Annotation): Annotation {
+        val locator = annotation.rangeLocator?.normalized()
+        return annotation.copy(
+            rangeLocator = locator,
+            locatorQuality = if (locator == null) {
+                ResolutionQuality.UNRESOLVED
+            } else {
+                annotation.locatorQuality
+            }
+        )
     }
 
     override suspend fun updateAnnotation(annotation: Annotation) {

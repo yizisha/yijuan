@@ -1,4 +1,18 @@
-# FlowReader 心流阅读
+# 一卷
+
+基于 FlowReader 持续开发的本地 Android 电子书阅读器，沿用原项目 GPL-3.0 许可与署名。
+
+当前版本 **0.3.13 / 5710**。支持书架分组与收藏、系列书整理、EPUB / TXT / PDF 阅读、笔记、统计，以及按需下载模型的离线听书。
+
+- [下载 APK 与对应源码](https://github.com/yizisha/yijuan/releases/tag/v0.3.13)
+- [0.3.13 修复及验证记录](docs/content-engine/reports/0.3.13-report-navigation-generation.md)
+- [设置结构](docs/SETTINGS_TREE.md)
+
+0.3.13 修复切章时旧页面回调覆盖新目标的问题；42 项定向回归、正式构建及签名校验已通过，指定 EPUB 的真机复验仍待完成。发布 APK 为 ARM64，语音模型不包含在安装包中。
+
+源码包含构建所需的 sherpa-onnx 1.13.8 AAR，来源、校验值与许可见 [SOURCES.txt](app/src/main/assets/speech-licenses/SOURCES.txt)。本地构建使用 JDK 21 与 Android SDK 35，可运行 `./gradlew :app:assembleRelease`；Windows 使用 `./gradlew.bat :app:assembleRelease`。
+
+以下保留原项目说明；历史版本及旧功能描述请以当前源码、设置结构和更新日志为准。
 
 <p align="center">
   <b>中文</b> | <a href="README_EN.md">English</a>

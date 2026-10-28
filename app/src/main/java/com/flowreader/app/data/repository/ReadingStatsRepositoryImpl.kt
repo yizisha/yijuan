@@ -10,6 +10,8 @@ import com.flowreader.app.domain.model.ReadingReport
 import com.flowreader.app.domain.repository.ReadingStatsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -24,6 +26,7 @@ class ReadingStatsRepositoryImpl @Inject constructor(
 ) : ReadingStatsRepository {
 
     private val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val statsWriter = Mutex()
 
     override fun getStatsByBookId(bookId: Long): Flow<List<ReadingStats>> {
         return readingStatsDao.getStatsByBookId(bookId).map { entities ->
@@ -53,27 +56,37 @@ class ReadingStatsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateTodayStats(bookId: Long, readPages: Int, readTimeSeconds: Long) {
-        val today = LocalDate.now().format(dateFormat)
-        val existing = readingStatsDao.getStatsByDate(bookId, today)
+        require(readPages >= 0 && readTimeSeconds >= 0) { "Reading deltas must be non-negative" }
+        if (readPages == 0 && readTimeSeconds == 0L) return
+        statsWriter.withLock {
+            val today = LocalDate.now().format(dateFormat)
+            val existing = readingStatsDao.getStatsByDate(bookId, today)?.let { row ->
+                if (row.statsVersion >= com.flowreader.app.data.local.entity.CURRENT_READING_STATS_VERSION) row
+                else row.copy(readPages = 0, readChapters = 0, readTimeSeconds = 0,
+                    visualReadMillis = 0, ttsReadMillis = 0, qualifiedTextUnits = 0, settledTurns = 0,
+                    statsVersion = com.flowreader.app.data.local.entity.CURRENT_READING_STATS_VERSION)
+            }
 
-        if (existing != null) {
-            readingStatsDao.updateStats(
-                existing.copy(
-                    readPages = existing.readPages + readPages,
-                    readTimeSeconds = existing.readTimeSeconds + readTimeSeconds,
-                    lastReadTime = System.currentTimeMillis()
+            if (existing != null) {
+                readingStatsDao.updateStats(
+                    existing.copy(
+                        readPages = existing.readPages + readPages,
+                        readTimeSeconds = existing.readTimeSeconds + readTimeSeconds,
+                        lastReadTime = System.currentTimeMillis()
+                    )
                 )
-            )
-        } else {
-            readingStatsDao.insertStats(
-                ReadingStatsEntity(
-                    bookId = bookId,
-                    date = today,
-                    readPages = readPages,
-                    readTimeSeconds = readTimeSeconds,
-                    lastReadTime = System.currentTimeMillis()
+            } else {
+                readingStatsDao.insertStats(
+                    ReadingStatsEntity(
+                        bookId = bookId,
+                        date = today,
+                        readPages = readPages,
+                        readTimeSeconds = readTimeSeconds,
+                        statsVersion = com.flowreader.app.data.local.entity.CURRENT_READING_STATS_VERSION,
+                        lastReadTime = System.currentTimeMillis()
+                    )
                 )
-            )
+            }
         }
     }
 

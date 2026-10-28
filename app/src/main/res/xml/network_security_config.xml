@@ -3,7 +3,7 @@
   Cleartext is permitted because LAN OPDS servers (Calibre, COPS, Komga on a home NAS) are almost
   never HTTPS. The real boundary is not this file: `OpdsAddress` rejects any host that is not a
   loopback / RFC1918 / RFC4193 literal or a `.local`-style name, and re-checks every redirect hop,
-  so the app cannot reach a public host even though cleartext is allowed here.
+  for OPDS. Bundled speech does not download executable code.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">

@@ -25,7 +25,7 @@ object AnnotationExporter {
             }
 
             AnnotationExportFormat.HTML -> buildString {
-                append("<html><body><h1>FlowReader 标注</h1>")
+                append("<html><body><h1>一卷 标注</h1>")
                 annotations.forEach { annotation ->
                     val book = titleOf(annotation.bookId)?.let { "《${it.escapeHtml()}》" } ?: ""
                     append("<section><h2>${book}第 ${annotation.chapterIndex + 1} 章</h2>")

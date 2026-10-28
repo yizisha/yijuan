@@ -4,8 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -25,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +31,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,9 +41,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clipToBounds
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
@@ -77,6 +82,7 @@ object PdfRegionCodec {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PdfViewer(
     filePath: String,
@@ -86,243 +92,120 @@ fun PdfViewer(
     annotations: List<Annotation> = emptyList(),
     onAddPdfAnnotation: (Int, Int, Int, Int, Int) -> Unit,
     onPageChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTap: () -> Unit = {},
+    onPageRendered: () -> Unit = {}
 ) {
-    var pdfBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var pageCount by remember { mutableIntStateOf(0) }
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
-
+    val session = remember(filePath) { com.flowreader.app.util.PdfDocumentSession(filePath) }
+    DisposableEffect(session) { onDispose { session.close() } }
+    var rendered by remember(filePath, currentPage) { mutableStateOf<com.flowreader.app.util.RenderedPdfPage?>(null) }
+    var error by remember(filePath, currentPage) { mutableStateOf<String?>(null) }
+    var retry by remember { mutableIntStateOf(0) }
+    var scale by remember(currentPage) { mutableFloatStateOf(1f) }
+    var offset by remember(currentPage) { mutableStateOf(Offset.Zero) }
     var annotationMode by remember { mutableStateOf(false) }
-    var dragStart by remember { mutableStateOf<Offset?>(null) }
-    var dragCurrent by remember { mutableStateOf<Offset?>(null) }
-
-    var loadError by remember { mutableStateOf(false) }
-    var retryTrigger by remember { mutableIntStateOf(0) }
+    var dragStart by remember(currentPage) { mutableStateOf<Offset?>(null) }
+    var dragEnd by remember(currentPage) { mutableStateOf<Offset?>(null) }
     val density = LocalDensity.current
-
-    LaunchedEffect(filePath, currentPage, retryTrigger) {
-        scale = 1f
-        offsetX = 0f
-        offsetY = 0f
-        loadError = false
-        if (filePath.isBlank()) {
-            loadError = true
-            return@LaunchedEffect
-        }
-        withContext(Dispatchers.IO) {
+    val context = LocalContext.current
+    val annotationTint = MaterialTheme.colorScheme.primary
+    BoxWithConstraints(modifier.fillMaxSize().background(backgroundColor).clipToBounds()) {
+        val width = with(density) { maxWidth.toPx() }
+        val height = with(density) { maxHeight.toPx() }
+        LaunchedEffect(session, currentPage, width.toInt(), retry) {
+            error = null
             try {
-                val file = File(filePath)
-                if (!file.exists()) {
-                    withContext(Dispatchers.Main) { loadError = true }
-                    return@withContext
-                }
-                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
-                    PdfRenderer(pfd).use { renderer ->
-                        pageCount = renderer.pageCount
-                        if (currentPage in 0 until pageCount) {
-                            renderer.openPage(currentPage).use { page ->
-                                val bitmap = Bitmap.createBitmap(
-                                    page.width,
-                                    page.height,
-                                    Bitmap.Config.ARGB_8888
-                                )
-                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                                pdfBitmap?.recycle()
-                                pdfBitmap = bitmap
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("PdfViewer", "Failed to render PDF page", e)
-                withContext(Dispatchers.Main) { loadError = true }
+                rendered = session.render(currentPage, width.toInt())
+                onPageRendered()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) { error = failure.localizedMessage ?: failure.javaClass.simpleName }
+        }
+        val bitmap = rendered?.bitmap
+        val fit = if (bitmap == null) 1f else minOf(width / bitmap.width, height / bitmap.height)
+        val pageWidth = (bitmap?.width ?: 1) * fit
+        val pageHeight = (bitmap?.height ?: 1) * fit
+        fun normalized(point: Offset): Pair<Int, Int>? {
+            val x = (point.x - width / 2 - offset.x) / scale + pageWidth / 2
+            val y = (point.y - height / 2 - offset.y) / scale + pageHeight / 2
+            if (x !in 0f..pageWidth || y !in 0f..pageHeight) return null
+            return (x / pageWidth * 999).toInt() to (y / pageHeight * 999).toInt()
+        }
+        val latestSwipe by rememberUpdatedState<(Boolean) -> Unit> { forward ->
+            if (com.flowreader.app.BuildConfig.DEBUG) android.util.Log.d("PdfGesture", "page=$currentPage forward=$forward")
+            if (forward) onPageChange(currentPage + 1) else if (currentPage > 0) onPageChange(currentPage - 1)
+        }
+        val latestTap by rememberUpdatedState<(Offset) -> Unit> { point ->
+            when {
+                scale > 1.01f -> onTap()
+                point.x < width * .3f && currentPage > 0 -> onPageChange(currentPage - 1)
+                point.x > width * .7f -> onPageChange(currentPage + 1)
+                else -> onTap()
             }
         }
-    }
-
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-    ) {
-        val viewWidthPx = with(density) { maxWidth.toPx() }
-        val viewHeightPx = with(density) { maxHeight.toPx() }
+        val latestDoubleTap by rememberUpdatedState<() -> Unit> {
+            scale = if (scale > 1.01f) 1f else 2f
+            offset = Offset.Zero
+        }
+        val latestZoomed by rememberUpdatedState(scale > 1.01f)
+        val latestTransform by rememberUpdatedState<(Float, Offset) -> Unit> { zoom, pan ->
+            scale = (scale * zoom).coerceIn(1f, 4f)
+            val proposed = offset + pan
+            offset = Offset(proposed.x.coerceIn(-width * (scale - 1) / 2, width * (scale - 1) / 2),
+                proposed.y.coerceIn(-height * (scale - 1) / 2, height * (scale - 1) / 2))
+        }
+        val gestures = remember(filePath, context, density.density) {
+            PdfGestureHandler(context, 64 * density.density, { latestZoomed },
+                { latestSwipe(it) }, { latestTap(it) }, { latestDoubleTap() }, { zoom, pan -> latestTransform(zoom, pan) })
+        }
+        val touchInput = remember(gestures) { Modifier.pointerInteropFilter { gestures.onTouchEvent(it) } }
+        DisposableEffect(gestures, annotationMode) { onDispose { gestures.cancel() } }
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            if (annotationMode) return@detectTapGestures
-                            val tapZoneWidth = size.width * 0.3f
-                            when {
-                                offset.x < tapZoneWidth && currentPage > 0 -> onPageChange(currentPage - 1)
-                                offset.x > size.width - tapZoneWidth && currentPage < pageCount - 1 -> onPageChange(currentPage + 1)
-                            }
-                        }
-                    )
-                }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        if (annotationMode) return@detectTransformGestures
-                        scale = (scale * zoom).coerceIn(0.5f, 3f)
-                        offsetX += pan.x
-                        offsetY += pan.y
-                    }
-                }
-                .pointerInput(annotationMode) {
+            Modifier.fillMaxSize()
+                .then(if (annotationMode) Modifier else touchInput)
+                .pointerInput(annotationMode, currentPage, scale, offset) {
                     if (!annotationMode) return@pointerInput
-                    detectDragGestures(
-                        onDragStart = { dragStart = it },
-                        onDrag = { change, _ ->
-                            change.consume()
-                            dragCurrent = change.position
-                        },
-                        onDragEnd = {
-                            val start = dragStart
-                            val current = dragCurrent
-                            if (start != null && current != null && (current - start).getDistance() > 24f) {
-                                val bitmap = pdfBitmap
-                                if (bitmap != null) {
-                                    val scaleFactor = viewWidthPx / bitmap.width.toFloat()
-                                    val imageHeight = bitmap.height * scaleFactor
-                                    val imageTop = (size.height - imageHeight) / 2f
-                                    fun toPage(offset: Offset): Pair<Int, Int> {
-                                        val px = (offset.x / scaleFactor).coerceIn(0f, bitmap.width.toFloat())
-                                        val py = ((offset.y - imageTop) / scaleFactor).coerceIn(0f, bitmap.height.toFloat())
-                                        return (px / bitmap.width * 999).toInt() to (py / bitmap.height * 999).toInt()
-                                    }
-                                    val (x0, y0) = toPage(start)
-                                    val (x1, y1) = toPage(current)
-                                    onAddPdfAnnotation(currentPage, x0, y0, x1, y1)
-                                }
-                            }
-                            dragStart = null
-                            dragCurrent = null
+                    detectDragGestures(onDragStart = { dragStart = it; dragEnd = it }, onDrag = { change, _ ->
+                        change.consume(); dragEnd = change.position
+                    }, onDragCancel = { dragStart = null; dragEnd = null }, onDragEnd = {
+                        val start = dragStart?.let(::normalized)
+                        val end = dragEnd?.let(::normalized)
+                        if (start != null && end != null && kotlin.math.abs(start.first - end.first) + kotlin.math.abs(start.second - end.second) > 5) {
+                            onAddPdfAnnotation(currentPage, start.first, start.second, end.first, end.second)
                         }
-                    )
-                },
-            contentAlignment = Alignment.Center
+                        dragStart = null; dragEnd = null
+                    })
+                }, contentAlignment = Alignment.Center
         ) {
-        if (loadError) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "PDF 文件无法加载",
-                        color = textColor,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(onClick = { retryTrigger++ }) {
-                        Text(stringResource(R.string.action_retry))
-                    }
+            when {
+                error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    Text(stringResource(R.string.pdf_load_error, error.orEmpty()), color = textColor)
+                    OutlinedButton(onClick = { retry++ }) { Text(stringResource(R.string.action_retry)) }
                 }
-            }
-        } else {
-            val bitmap = pdfBitmap
-            if (bitmap != null) {
-                val scaleFactor = viewWidthPx / bitmap.width.toFloat()
-                val imageHeight = bitmap.height * scaleFactor
-                val imageTop = (viewHeightPx - imageHeight) / 2f
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = stringResource(R.string.reader_pdf_page, currentPage + 1),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offsetX,
-                                translationY = offsetY
-                            )
-                    )
-
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val highlight = textColor.copy(alpha = 0.35f)
+                bitmap == null -> CircularProgressIndicator(color = textColor)
+                else -> Box(Modifier.size(with(density) { pageWidth.toDp() }, with(density) { pageHeight.toDp() })
+                    .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)) {
+                    Image(bitmap.asImageBitmap(), stringResource(R.string.reader_pdf_page, currentPage + 1), Modifier.fillMaxSize())
+                    Canvas(Modifier.fillMaxSize()) {
                         annotations.forEach { annotation ->
-                            val (x0, y0, x1, y1) = PdfRegionCodec.unpackRect(annotation.startPosition, annotation.endPosition).toList()
-                            drawRect(
-                                color = highlight,
-                                topLeft = Offset(x0 / 999f * viewWidthPx, imageTop + y0 / 999f * imageHeight),
-                                size = Size(
-                                    (x1 - x0) / 999f * viewWidthPx,
-                                    (y1 - y0) / 999f * imageHeight
-                                )
-                            )
-                        }
-                        val start = dragStart
-                        val current = dragCurrent
-                        if (start != null && current != null && annotationMode) {
-                            drawRect(
-                                color = highlight,
-                                topLeft = Offset(minOf(start.x, current.x), minOf(start.y, current.y)),
-                                size = Size(
-                                    kotlin.math.abs(current.x - start.x),
-                                    kotlin.math.abs(current.y - start.y)
-                                ),
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(3f)
-                            )
+                            val rect = PdfRegionCodec.unpackRect(annotation.startPosition, annotation.endPosition)
+                            drawRect(annotationTint.copy(alpha = .22f), Offset(rect[0] / 999f * size.width, rect[1] / 999f * size.height),
+                                Size((rect[2] - rect[0]) / 999f * size.width, (rect[3] - rect[1]) / 999f * size.height))
                         }
                     }
                 }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = textColor)
-                }
+            }
+            val start = dragStart
+            val end = dragEnd
+            if (annotationMode && start != null && end != null) Canvas(Modifier.fillMaxSize()) {
+                drawRect(textColor.copy(alpha = .45f), Offset(minOf(start.x, end.x), minOf(start.y, end.y)),
+                    Size(kotlin.math.abs(end.x - start.x), kotlin.math.abs(end.y - start.y)),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
             }
         }
-
-        if (!loadError) {
-            FloatingActionButton(
-                onClick = { annotationMode = !annotationMode },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(50),
-                containerColor = if (annotationMode) MaterialTheme.colorScheme.primary else backgroundColor.copy(alpha = 0.9f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.BorderColor,
-                    contentDescription = if (annotationMode) stringResource(R.string.reader_pdf_annotation_off) else stringResource(R.string.reader_pdf_annotation_on),
-                    tint = if (annotationMode) MaterialTheme.colorScheme.onPrimary else textColor
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(backgroundColor.copy(alpha = 0.8f))
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Slider(
-                value = currentPage.toFloat(),
-                onValueChange = { onPageChange(it.toInt()) },
-                valueRange = 0f..(pageCount - 1).coerceAtLeast(0).toFloat(),
-                modifier = Modifier.fillMaxWidth(),
-                colors = SliderDefaults.colors(
-                    thumbColor = textColor,
-                    activeTrackColor = textColor
-                )
-            )
-            Text(
-                text = "${currentPage + 1} / $pageCount",
-                style = MaterialTheme.typography.bodySmall,
-                color = textColor
-            )
-        }
+        FloatingActionButton(onClick = { annotationMode = !annotationMode }, modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 16.dp),
+            containerColor = if (annotationMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface) {
+            Icon(Icons.Default.BorderColor, stringResource(if (annotationMode) R.string.reader_pdf_annotation_off else R.string.reader_pdf_annotation_on),
+                tint = if (annotationMode) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
         }
     }
 }

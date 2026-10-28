@@ -9,21 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -31,8 +27,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,13 +40,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.flowreader.app.R
 import com.flowreader.app.core.designsystem.component.BookCover
+import com.flowreader.app.core.designsystem.component.FlowIcons
+import com.flowreader.app.core.designsystem.component.FlowTopBar
 import com.flowreader.app.core.designsystem.token.FlowSpacing
 import com.flowreader.app.core.util.FlowFormatters
 import com.flowreader.app.domain.model.GlobalSearchResult
+import com.flowreader.app.domain.model.SearchHitProjector
+import com.flowreader.app.domain.repository.SearchProgress
 
 /**
  * The independent search destination (v55): search history on idle, then two-section results —
- * books (title/author) and chapter hits from the FTS index — with paged loading.
+ * books (title/author) and canonical chapter matches, with progress, cancellation and paged loading.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,10 +58,11 @@ fun SearchScreen(
     initialQuery: String,
     onBackClick: () -> Unit,
     onBookClick: (Long) -> Unit,
-    onChapterClick: (Long, Int) -> Unit,
+    onChapterClick: (Long, Int, Int) -> Unit,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    DisposableEffect(viewModel) { onDispose { viewModel.cancelSearch() } }
 
     LaunchedEffect(initialQuery) {
         if (initialQuery.isNotBlank()) {
@@ -69,27 +70,33 @@ fun SearchScreen(
         }
     }
 
+    SearchContent(
+        uiState,
+        onBackClick,
+        onBookClick,
+        onChapterClick,
+        viewModel::updateQuery,
+        viewModel::cancelSearch,
+        viewModel::loadMoreChapters,
+        viewModel::clearHistory
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun SearchContent(
+    uiState: SearchUiState,
+    onBackClick: () -> Unit,
+    onBookClick: (Long) -> Unit,
+    onChapterClick: (Long, Int, Int) -> Unit,
+    onQueryChange: (String) -> Unit,
+    onCancel: () -> Unit,
+    onLoadMore: () -> Unit,
+    onClearHistory: () -> Unit
+) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    androidx.compose.material3.OutlinedTextField(
-                        value = uiState.query,
-                        onValueChange = { viewModel.updateQuery(it) },
-                        placeholder = { Text(stringResource(R.string.library_search_placeholder)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
-                        )
-                    }
-                }
-            )
+            FlowTopBar(title = stringResource(R.string.search_title), onNavigateUp = onBackClick)
         }
     ) { paddingValues ->
         Column(
@@ -97,20 +104,37 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            androidx.compose.material3.OutlinedTextField(
+                value = uiState.query,
+                onValueChange = onQueryChange,
+                placeholder = { Text(stringResource(R.string.library_search_placeholder)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = FlowSpacing.lg, vertical = FlowSpacing.sm)
+            )
             if (uiState.isSearching) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                SearchProgressRow(uiState.progress, onCancel)
+            }
+            uiState.error?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = FlowSpacing.lg))
+            }
+            if (uiState.cancelled) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = FlowSpacing.lg), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.search_cancelled), modifier = Modifier.weight(1f))
+                    TextButton(onClick = { onQueryChange(uiState.query) }) { Text(stringResource(R.string.search_retry)) }
+                }
             }
 
             when {
-                uiState.query.trim().length < 2 -> {
+                uiState.query.isBlank() -> {
                     HistorySection(
                         history = uiState.history,
-                        onUseHistory = { viewModel.useHistory(it) },
-                        onClearHistory = { viewModel.clearHistory() }
+                        onUseHistory = onQueryChange,
+                        onClearHistory = onClearHistory
                     )
                 }
 
                 else -> LazyColumn(
+                    modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(FlowSpacing.lg),
                     verticalArrangement = Arrangement.spacedBy(FlowSpacing.md)
                 ) {
@@ -121,7 +145,7 @@ fun SearchScreen(
                         )
                     }
 
-                    if (uiState.bookResults.isEmpty()) {
+                    if (uiState.bookResults.isEmpty() && !uiState.isSearching && !uiState.cancelled && uiState.error == null) {
                         item(key = "book_empty") {
                             Text(
                                 text = stringResource(R.string.search_no_books),
@@ -144,13 +168,25 @@ fun SearchScreen(
                     }
 
                     items(uiState.chapterResults, key = { "chapter-${it.bookId}-${it.chapterIndex}" }) { result ->
-                        ChapterSearchRow(result = result, onClick = { onChapterClick(result.bookId, result.chapterIndex) })
+                        ChapterSearchRow(
+                            result = result,
+                            onClick = {
+                                // 带上**已验证**的章内偏移；无可靠坐标时传 -1，由阅读器退回章首
+                                // 并显示「定位待恢复」，绝不用 chapterIndex 伪造偏移。
+                                onChapterClick(result.bookId, result.chapterIndex, result.firstStartUtf16 ?: -1)
+                            }
+                        )
+                    }
+
+                    if (uiState.chapterResults.isEmpty() && !uiState.isSearching && !uiState.cancelled && uiState.error == null) {
+                        item(key = "chapter_empty") { Text(stringResource(R.string.reader_search_no_results)) }
                     }
 
                     if (uiState.hasMoreChapters) {
                         item(key = "load_more") {
                             OutlinedButton(
-                                onClick = { viewModel.loadMoreChapters() },
+                                onClick = onLoadMore,
+                                enabled = !uiState.isSearching,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = FlowSpacing.sm)
@@ -161,16 +197,29 @@ fun SearchScreen(
                     }
                 }
             }
+        }
+    }
+}
 
-            uiState.error?.let { error ->
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = FlowSpacing.lg)
+@Composable
+fun SearchProgressRow(progress: SearchProgress?, onCancel: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = FlowSpacing.lg), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            if (progress != null && progress.totalChapters > 0) {
+                LinearProgressIndicator(
+                    progress = { progress.completedChapters.toFloat() / progress.totalChapters },
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Text(
+                    stringResource(R.string.search_progress, progress.completedChapters, progress.totalChapters),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                Text(stringResource(R.string.search_preparing), style = MaterialTheme.typography.labelSmall)
             }
         }
+        TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.action_cancel)) }
     }
 }
 
@@ -185,7 +234,7 @@ private fun HistorySection(history: List<String>, onUseHistory: (String) -> Unit
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    Icons.Default.Search,
+                    FlowIcons.Search,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(48.dp)
@@ -290,11 +339,19 @@ private fun ChapterSearchRow(result: GlobalSearchResult, onClick: () -> Unit) {
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
+                // 无法精确锁定时不误导用户：明确说明会跳到章首附近。
+                if (result.confidence != SearchHitProjector.Confidence.EXACT) {
+                    Text(
+                        text = stringResource(R.string.search_match_approximate),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         },
         leadingContent = {
             Icon(
-                Icons.Default.Book,
+                FlowIcons.Book,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )

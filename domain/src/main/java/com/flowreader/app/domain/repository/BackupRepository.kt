@@ -7,6 +7,12 @@ import android.net.Uri
  * 负责书籍、书签、阅读进度等数据的导出和导入
  */
 interface BackupRepository {
+    /** 校验并缓存待恢复内容；不写入当前书库。 */
+    suspend fun prepareImport(uri: Uri): Result<BackupPreview>
+    suspend fun prepareImportFromFile(file: java.io.File): Result<BackupPreview>
+    suspend fun restorePrepared(token: String, mode: RestoreMode, restoreSettings: Boolean): Result<ImportResult>
+    suspend fun discardPrepared(token: String)
+
     /**
      * 导出数据到指定 URI
      * @param uri 目标文件 URI
@@ -36,5 +42,23 @@ interface BackupRepository {
 data class ImportResult(
     val booksImported: Int,
     val bookmarksImported: Int,
-    val annotationsImported: Int = 0
+    val annotationsImported: Int = 0,
+    val booksMerged: Int = 0,
+    val warnings: List<String> = emptyList()
+)
+
+enum class RestoreMode { MERGE, REPLACE }
+
+data class BackupPreview(
+    val token: String,
+    val createdAt: Long,
+    val books: Int,
+    val bookmarks: Int,
+    val annotations: Int,
+    val categories: Int,
+    val files: Int,
+    val duplicates: Int,
+    val hasSettings: Boolean,
+    val legacy: Boolean,
+    val warnings: List<String> = emptyList()
 )
